@@ -21,6 +21,7 @@ function LoginPage() {
 
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -35,7 +36,7 @@ function LoginPage() {
         ? { email: data.identifier, password: data.password }
         : { username: data.identifier, password: data.password };
 
-      const response = await fetch('http://localhost:5001/api/sessions', {
+      const response = await fetch(`${frontEndUrl}/api/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

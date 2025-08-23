@@ -10,6 +10,7 @@ function DashboardPage() {
   const [meal, setMeal] = useState("");
   const [activeTab, setActiveTab] = useState("Thorne");
   const [username, setUsername] = useState(""); 
+  const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -24,7 +25,7 @@ function DashboardPage() {
         const token = localStorage.getItem("authToken");
         if (!token) return;
 
-        const res = await fetch("http://localhost:5001/api/users/me", {
+        const res = await fetch(`${frontEndUrl}/api/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

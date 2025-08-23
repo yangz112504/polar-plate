@@ -11,6 +11,7 @@ function DiningHallMenu({ meal, activeTab, setActiveTab }) {
   const [votesMap, setVotesMap] = useState({ Thorne: 0, Moulton: 0 });
   const [refreshKey, setRefreshKey] = useState(0);
   const hasFetched = useRef(false);
+  const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
   const handleSubmitSuccess = () => {
     fetchRatings();
@@ -22,7 +23,7 @@ function DiningHallMenu({ meal, activeTab, setActiveTab }) {
       if (hasFetched.current) return; // Prevent multiple fetches
       hasFetched.current = true;
       try {
-        const res = await fetch("http://localhost:5001/api/menus"); 
+        const res = await fetch(`${frontEndUrl}/api/menus`);
         if (!res.ok) throw new Error(`HTTP error! status ${res.status}`);
         const data = await res.json();
         console.log(data)
@@ -55,7 +56,7 @@ function DiningHallMenu({ meal, activeTab, setActiveTab }) {
       const currentDate = new Date().toISOString().slice(0, 10);
 
       const res = await fetch(
-        `http://localhost:5001/api/ratings/${activeTab}/${meal}?date=${currentDate}`,
+        `${frontEndUrl}/api/ratings/${activeTab}/${meal}?date=${currentDate}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

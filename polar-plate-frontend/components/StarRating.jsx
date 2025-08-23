@@ -6,6 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 function StarRating({ activeTab, meal, onSubmitSuccess }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(null);
+  const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
   useEffect(() => {
     setRating(0);
@@ -19,7 +20,7 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
         const currentDate = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
         const token = localStorage.getItem("authToken");
         const res = await fetch(
-          `http://localhost:5001/api/ratings/user?hall=${activeTab}&meal=${meal}&date=${currentDate}`,
+          `${frontEndUrl}/api/ratings/user?hall=${activeTab}&meal=${meal}&date=${currentDate}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
@@ -43,7 +44,7 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
     try {
       const currentDate = new Date().toISOString().slice(0, 10);
       const token = localStorage.getItem("authToken");
-      const res = await fetch("http://localhost:5001/api/ratings", {
+      const res = await fetch(`${frontEndUrl}/api/ratings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -65,7 +66,7 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
 
   return (
     <div className="flex flex-col items-center justify-center mt-6">
-      
+
       {/* Label + Stars */}
       <div className="flex items-center space-x-4 mb-4">
         <span className="text-lg font-medium text-gray-700">

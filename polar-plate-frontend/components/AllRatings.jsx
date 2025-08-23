@@ -4,6 +4,7 @@ import { User } from "lucide-react";
 function AllRatings({ hall, meal, refreshKey }) {
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
   useEffect(() => {
     const fetchRatings = async () => {
@@ -11,7 +12,7 @@ function AllRatings({ hall, meal, refreshKey }) {
         const token = localStorage.getItem("authToken");
         const today = new Date().toISOString().slice(0, 10);
         const res = await fetch(
-          `http://localhost:5001/api/ratings/${hall}/${meal}/${today}`,
+          `${frontEndUrl}/api/ratings/${hall}/${meal}/${today}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

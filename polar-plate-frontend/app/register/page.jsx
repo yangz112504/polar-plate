@@ -31,6 +31,7 @@ function RegisterPage() {
 
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -38,7 +39,7 @@ function RegisterPage() {
     clearErrors('general'); 
 
     try {
-      const response = await fetch('http://localhost:5001/api/users', {
+      const response = await fetch(`${frontEndUrl}/api/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
