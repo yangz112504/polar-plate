@@ -1,6 +1,6 @@
 // routes/menus.js
 const express = require("express");
-const chromium = require("chrome-aws-lambda");
+const { chromium } = require("playwright");
 
 const router = express.Router();
 const BOWDOIN_MENU_URL = "https://www.bowdoin.edu/dining/menus/index.html#0";
@@ -8,15 +8,12 @@ const BOWDOIN_MENU_URL = "https://www.bowdoin.edu/dining/menus/index.html#0";
 router.get("/", async (req, res) => {
   let browser;
   try {
-    browser = await chromium.puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath || '/usr/bin/chromium-browser',
-      headless: chromium.headless,
-    });
-
+    browser = await chromium.launch({
+          headless: true,
+          args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });    
     const page = await browser.newPage();
-    await page.goto(BOWDOIN_MENU_URL, { waitUntil: "networkidle0" });
+    await page.goto(BOWDOIN_MENU_URL, { waitUntil: "networkidle" });
 
     // Thorne Data
     const thorneMenu = await page.$eval("#u49", (el) => {

@@ -44,15 +44,17 @@ const Rating = mongoose.model("Rating", ratingSchema);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-
-const corsOptions = {
-  origin: "https://polarplate.onrender.com",
+app.use(cors({
+  origin: [
+    process.env.FRONTEND_URL,  // e.g. https://polarplate.onrender.com
+    "http://localhost:3000"    // local dev
+  ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-};
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+}));
+
+app.get("/healthz", (req, res) => res.status(200).send("ok"));
 
 app.use('/api/menus', menusRoute)
 
@@ -266,6 +268,6 @@ app.delete('/api/sessions', (req, res) => {
 });
 
 // Starting the server
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

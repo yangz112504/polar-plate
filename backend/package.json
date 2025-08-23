@@ -24,6 +24,8 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.0",
+    "playwright": "^1.55.0",
+    "puppeteer": "^24.17.0",
     "puppeteer-core": "^10.4.0"
   }
 }
