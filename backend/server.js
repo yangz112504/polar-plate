@@ -44,17 +44,23 @@ const Rating = mongoose.model("Rating", ratingSchema);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:3000"
+];
+
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL,  // e.g. https://polarplate.onrender.com
-    "http://localhost:3000"    // local dev
-  ],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
-
-app.get("/healthz", (req, res) => res.status(200).send("ok"));
 
 app.use('/api/menus', menusRoute)
 
@@ -262,12 +268,12 @@ app.get('/api/ratings/:hall/:meal', authenticateToken, async (req, res) => {
   }
 });
 
-// Logout
+// Logout (stateless)
 app.delete('/api/sessions', (req, res) => {
   res.status(200).json({ message: "Logged out (stateless)" });
 });
 
-// Starting the server
-app.listen(PORT, "0.0.0.0", () => {
+// -------------------- START SERVER --------------------
+app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
