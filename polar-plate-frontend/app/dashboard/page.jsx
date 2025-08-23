@@ -53,6 +53,7 @@ function DashboardPage() {
                 bg-gradient-to-br from-[#addae2] to-[#dceeff] animate-[dreamyFlow_15s_ease_infinite]"
     >
       {/* Top bar */}
+      
       <div className="w-full flex flex-col md:flex-row items-center justify-between mb-6 gap-3 md:gap-0">
         {/* Left: The Polar Plate */}
         <div className="text-[#006D77] text-2xl md:text-3xl font-extrabold cursor-pointer">

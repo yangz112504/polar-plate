@@ -40,7 +40,7 @@ function Home() {
             Discover, rate, and share your dining experiences at Bowdoin's dining halls
           </p>
 
-          {/* CTA Buttons */}
+          {/* Register and Login Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center md:justify-start">
             <Link
               href="/register"

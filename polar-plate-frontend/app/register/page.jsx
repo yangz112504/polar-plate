@@ -1,28 +1,26 @@
-// app/register/page.jsx
-'use client'; // This component uses client-side hooks like useState and event handlers
+'use client'; 
 
 import React, { useState } from 'react';
-import Link from 'next/link'; // Next.js Link for optimized navigation
-import { useForm } from 'react-hook-form'; // Import useForm from react-hook-form
-import { zodResolver } from '@hookform/resolvers/zod'; // Import zodResolver for validation
-import * as z from 'zod'; // Import Zod for schema definition
-import { useRouter } from 'next/navigation'; // Import useRouter for navigation after success
+import Link from 'next/link';
+import { useForm } from 'react-hook-form'; 
+import { zodResolver } from '@hookform/resolvers/zod'; 
+import * as z from 'zod'; 
+import { useRouter } from 'next/navigation'; 
 
-// Define the validation schema using Zod
+// Validation Schema
 const registerSchema = z.object({
   username: z.string()
     .min(3, 'Username must be at least 3 characters.')
     .max(30, 'Username must be at most 30 characters.')
-    .regex(/^(?!.*\.\.)(?!.*\.$)[a-zA-Z0-9._]{3,30}$/, 'Invalid username format.'), // Matches your backend regex
+    .regex(/^(?!.*\.\.)(?!.*\.$)[a-zA-Z0-9._]{3,30}$/, 'Invalid username format.'),
   email: z.string()
-    .email('Invalid email format.')
-    .regex(/\S+@bowdoin\.edu$/, 'Must be a valid Bowdoin email.'), // Matches your backend regex
+    .email('Invalid email format.'),
   password: z.string()
     .min(6, 'Password must be at least 6 characters.'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match.',
-  path: ['confirmPassword'], // Path to the field that caused the error
+  path: ['confirmPassword'], 
 });
 
 function RegisterPage() {
@@ -31,14 +29,13 @@ function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
-  const [loading, setLoading] = useState(false); // To show loading state
-  const [successMessage, setSuccessMessage] = useState(''); // To show success message
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const onSubmit = async (data) => {
     setLoading(true);
     setSuccessMessage('');
-    // Clear general errors before a new submission
-    clearErrors('general'); // ✅ properly clears old error
+    clearErrors('general'); 
 
     try {
       const response = await fetch('http://localhost:5001/api/users', {
@@ -57,11 +54,9 @@ function RegisterPage() {
 
       if (response.ok) {
         setSuccessMessage(responseData.message || 'Registration successful! You can now login.');
-        // Optionally, if your backend sends a token on registration, you could save it here
-        // console.log('Received token:', responseData.token);
         setTimeout(() => {
-          router.push('/login'); // Redirect to login page after successful registration
-        }, 1000); // Wait 2 seconds before redirecting
+          router.push('/login');
+        }, 1000);
       } else {
         // Handle backend validation errors or general error messages
         setError('general', { type: 'server', message: responseData.message || 'Registration failed.' });
@@ -75,7 +70,6 @@ function RegisterPage() {
   };
 
   return (
-    // Outer container: Mimics homepage background, centers content
     <main className="min-h-screen flex items-center justify-center p-4 md:p-8
                      bg-gradient-to-br from-[#addae2] to-[#dceeff]
                      text-[var(--bowdoin-black)]">
@@ -90,7 +84,7 @@ function RegisterPage() {
         Back to Home
       </Link>
 
-      {/* Inner container (The form card) */}
+      {/* Inner container */}
       <div className="bg-white p-8 md:p-10 rounded-xl shadow-xl w-full max-w-md
                       border border-[rgba(0,0,0,0.1)] backdrop-filter backdrop-blur-sm">
 
@@ -113,7 +107,7 @@ function RegisterPage() {
           </p>
         )}
 
-        {/* handleSubmit from react-hook-form takes care of validation before onSubmit */}
+        {/* handleSubmit takes care of validation before onSubmit */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
             <label htmlFor="username" className="block text-gray-700 text-sm font-semibold mb-2">
@@ -123,7 +117,7 @@ function RegisterPage() {
               type="text"
               id="username"
               placeholder="e.g., foodie_bear (3-30 char)"
-              {...register('username')} // Register the input with react-hook-form
+              {...register('username')} 
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006D77] focus:border-transparent transition-all duration-200
                           ${errors.username ? 'border-red-500' : 'border-gray-300'}`}
               aria-invalid={errors.username ? "true" : "false"}
@@ -138,13 +132,13 @@ function RegisterPage() {
 
           <div>
             <label htmlFor="email" className="block text-gray-700 text-sm font-semibold mb-2">
-              Bowdoin Email:
+              Email:
             </label>
             <input
               type="email"
               id="email"
-              placeholder="name@bowdoin.edu"
-              {...register('email')} // Register the input
+              placeholder="example@domain.com"
+              {...register('email')} 
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006D77] focus:border-transparent transition-all duration-200
                           ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
               aria-invalid={errors.email ? "true" : "false"}
@@ -165,7 +159,7 @@ function RegisterPage() {
               type="password"
               id="password"
               placeholder="Minimum 6 characters"
-              {...register('password')} // Register the input
+              {...register('password')} 
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006D77] focus:border-transparent transition-all duration-200
                           ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
               aria-invalid={errors.password ? "true" : "false"}
@@ -186,7 +180,7 @@ function RegisterPage() {
               type="password"
               id="confirmPassword"
               placeholder="Re-enter your password"
-              {...register('confirmPassword')} // Register the input
+              {...register('confirmPassword')} 
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006D77] focus:border-transparent transition-all duration-200
                           ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
               aria-invalid={errors.confirmPassword ? "true" : "false"}
@@ -203,8 +197,8 @@ function RegisterPage() {
             type="submit"
             className="w-full bg-[#006D77] text-white py-3 px-4 rounded-lg font-semibold
                        hover:bg-[#005A63] transition-colors duration-300 ease-in-out
-                       flex items-center justify-center cursor-pointer" // Center loading spinner
-            disabled={loading} // Disable button when loading
+                       flex items-center justify-center cursor-pointer"
+            disabled={loading}
           >
             {loading ? (
               <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

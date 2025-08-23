@@ -13,13 +13,13 @@ const PORT = process.env.PORT || 5001;
 const SECRET_KEY = process.env.SECRET_KEY;
 const saltRounds = 10;
 
-// -------------------- MONGODB --------------------
+// MongoDB set up
 const uri = process.env.MONGO_URI;
 mongoose.connect(uri, { dbName: 'fansDB' })
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch(err => console.error("❌ MongoDB connection error:", err));
 
-// -------------------- SCHEMAS --------------------
+// Schemas
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -40,7 +40,7 @@ const ratingSchema = new mongoose.Schema({
 
 const Rating = mongoose.model("Rating", ratingSchema);
 
-// -------------------- MIDDLEWARE --------------------
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
@@ -50,8 +50,6 @@ app.use(cors({
 }));
 
 app.use('/api/menus', menusRoute)
-
-
 
 // JWT Auth Middleware
 function authenticateToken(req, res, next) {
@@ -68,7 +66,7 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// -------------------- ROUTES --------------------
+// Routes
 
 // Register user
 app.post('/api/users', async (req, res) => {
@@ -186,6 +184,7 @@ app.post('/api/ratings', authenticateToken, async (req, res) => {
   }
 });
 
+//Get user's rating
 app.get('/api/ratings/user', authenticateToken, async(req,res)=>{
   try{
     const { hall, meal, date } = req.query;
@@ -194,7 +193,6 @@ app.get('/api/ratings/user', authenticateToken, async(req,res)=>{
       return res.status(400).json({ message: "Hall, meal, and date required" });
     }
 
-    // Get this user's rating
     const userRating = await Rating.findOne({ user: req.user.userId, hall, meal, date });
 
     res.json({
@@ -205,7 +203,8 @@ app.get('/api/ratings/user', authenticateToken, async(req,res)=>{
     res.status(500).json({ message: "Server error" });
   }
 })
-// GET all ratings for hall+meal+date
+
+// Get ALL ratings for hall+meal+date
 app.get('/api/ratings/:hall/:meal/:date', authenticateToken, async (req, res) => {
   try {
     const { hall, meal, date } = req.params;
@@ -256,14 +255,12 @@ app.get('/api/ratings/:hall/:meal', authenticateToken, async (req, res) => {
   }
 });
 
-
-
-// Logout (stateless)
+// Logout
 app.delete('/api/sessions', (req, res) => {
   res.status(200).json({ message: "Logged out (stateless)" });
 });
 
-// -------------------- START SERVER --------------------
+// Starting the server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

@@ -11,11 +11,9 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
     setRating(0);
     if (!meal || !activeTab) return;
 
-    // 1️⃣ Reset UI stars
     setRating(0);
     setHover(null);
 
-    // 2️⃣ Fetch user rating for the new meal
     const fetchUserRating = async () => {
       try {
         const currentDate = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
@@ -43,7 +41,7 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
       return;
     }
     try {
-      const currentDate = new Date().toISOString().slice(0, 10); // '2025-08-20'
+      const currentDate = new Date().toISOString().slice(0, 10);
       const token = localStorage.getItem("authToken");
       const res = await fetch("http://localhost:5001/api/ratings", {
         method: "POST",
@@ -67,6 +65,7 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
 
   return (
     <div className="flex flex-col items-center justify-center mt-6">
+      
       {/* Label + Stars */}
       <div className="flex items-center space-x-4 mb-4">
         <span className="text-lg font-medium text-gray-700">

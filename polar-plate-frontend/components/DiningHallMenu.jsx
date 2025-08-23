@@ -26,7 +26,7 @@ function DiningHallMenu({ meal, activeTab, setActiveTab }) {
         if (!res.ok) throw new Error(`HTTP error! status ${res.status}`);
         const data = await res.json();
         console.log(data)
-        setMenuMap(data); // { Thorne: {...}, Moulton: {...} }
+        setMenuMap(data); 
       } catch (err) {
         console.error("Error fetching menus:", err.message);
       } finally {
@@ -52,7 +52,7 @@ function DiningHallMenu({ meal, activeTab, setActiveTab }) {
     try {
       const token = localStorage.getItem("authToken");
 
-      const currentDate = new Date().toISOString().slice(0, 10); // '2025-08-20'
+      const currentDate = new Date().toISOString().slice(0, 10);
 
       const res = await fetch(
         `http://localhost:5001/api/ratings/${activeTab}/${meal}?date=${currentDate}`,
@@ -87,6 +87,7 @@ function DiningHallMenu({ meal, activeTab, setActiveTab }) {
   
   return (
     <div className="text-center bg-white rounded-lg shadow-md p-4 w-full mb-6 relative">
+      
       {/* Tabs at top-left inside container */}
       <div className="absolute top-4 left-4 flex rounded-md border border-gray-300 overflow-hidden">
         {["Thorne", "Moulton"].map((tab) => (

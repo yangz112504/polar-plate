@@ -1,6 +1,5 @@
 import { useId } from "react";
 
-/** A single star that can be filled from 0.0 to 1.0 */
 function StarFraction({ fraction = 0, size = 28, className = "" }) {
   const uid = useId().replace(/:/g, ""); // safe unique id for gradient
   const pct = Math.max(0, Math.min(1, fraction)) * 100;

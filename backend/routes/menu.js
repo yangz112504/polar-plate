@@ -12,7 +12,7 @@ router.get("/", async (req, res) => {
     const page = await browser.newPage();
     await page.goto(BOWDOIN_MENU_URL, { waitUntil: "networkidle" });
 
-    // --- Thorne Data ---
+    // Thorne Data
     const thorneMenu = await page.$eval("#u49", (el) => {
       const children = Array.from(el.children);
       const menu = {};
@@ -36,7 +36,7 @@ router.get("/", async (req, res) => {
       return menu;
     });
 
-    // --- Moulton Data ---
+    // Moulton Data
     const moultonMenu = await page.$eval("#u48", (el) => {
       const children = Array.from(el.children);
       const menu = {};

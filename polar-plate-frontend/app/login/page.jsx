@@ -1,5 +1,4 @@
-// app/login/page.jsx
-'use client'; // This component uses client-side hooks
+'use client'; 
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -8,9 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 
-// Define the validation schema for login
+// Validation Schema for login
 const loginSchema = z.object({
-  identifier: z.string().min(1, 'Username or Email is required.'), // Can be username or email
+  identifier: z.string().min(1, 'Username or Email is required.'), 
   password: z.string().min(1, 'Password is required.'),
 });
 
@@ -26,7 +25,7 @@ function LoginPage() {
   const onSubmit = async (data) => {
     setLoading(true);
     setSuccessMessage('');
-    clearErrors('general'); // ✅ properly clears old error
+    clearErrors('general');
 
     try {
       // Determine if the identifier is an email or username based on format
@@ -36,7 +35,6 @@ function LoginPage() {
         ? { email: data.identifier, password: data.password }
         : { username: data.identifier, password: data.password };
 
-      // Your Express backend login endpoint is /api/sessions on port 5001
       const response = await fetch('http://localhost:5001/api/sessions', {
         method: 'POST',
         headers: {
@@ -49,7 +47,7 @@ function LoginPage() {
 
       if (response.ok) {
         setSuccessMessage(responseData.message || 'Login successful!');
-        localStorage.setItem('authToken', responseData.token); // ✅ save JWT
+        localStorage.setItem('authToken', responseData.token); // save JWT
 
         router.push('/dashboard'); 
       } else {
@@ -64,17 +62,15 @@ function LoginPage() {
   };
 
   return (
-    // Outer container: Mimics homepage background, centers content
-    // Make main tag relative so the absolute positioned button can be constrained
+
     <main className="min-h-screen flex items-center justify-center p-4 md:p-8 relative
                      bg-gradient-to-br from-[#addae2] to-[#dceeff]
                      text-[var(--bowdoin-black)]">
 
-      {/* Back button - positioned absolutely at top-left of the entire screen */}
       <Link href="/" className="absolute top-4 left-4 inline-flex items-center
                                  bg-white text-[#006D77] px-4 py-2 rounded-lg font-semibold shadow-sm
                                  border border-gray-200 hover:bg-gray-50 transition-colors duration-200
-                                 z-50"> {/* Add z-50 to ensure it's on top */}
+                                 z-50"> 
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
@@ -82,11 +78,9 @@ function LoginPage() {
       </Link>
 
 
-      {/* Inner container (The form card) - removed relative */}
       <div className="bg-white p-8 md:p-10 rounded-xl shadow-xl w-full max-w-md
                       border border-[rgba(0,0,0,0.1)] backdrop-filter backdrop-blur-sm">
 
-        {/* Removed the extra div for positioning, h1 margin reset */}
         <h1 className="text-3xl font-extrabold text-center mb-6 text-[var(--bowdoin-black)]"> {/* mb-6 as before, mt-10 removed */}
           Welcome Back!
         </h1>
@@ -94,7 +88,6 @@ function LoginPage() {
           Login to continue rating meals.
         </p>
 
-        {/* Display general form errors or success message */}
         {errors.general && (
           <p className="text-red-500 text-sm text-center mb-4 p-2 bg-red-100 border border-red-200 rounded-md">
             {errors.general.message}
@@ -114,7 +107,7 @@ function LoginPage() {
             <input
               type="text"
               id="identifier"
-              placeholder="Username or Bowdoin email"
+              placeholder="Username or Email"
               {...register('identifier')}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006D77] focus:border-transparent transition-all duration-200
                           ${errors.identifier ? 'border-red-500' : 'border-gray-300'}`}
