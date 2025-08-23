@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bowdoin-black: #231F20;
+    --bowdoin-white: #FFFFFF;
+    --bowdoin-brick: #9B2822;
+    --bowdoin-pine: #687C2F;
+    --light-grey: #F4F4F4;
+    --heading-font: 'Merriweather', serif;
+    --body-font: 'Lato', sans-serif;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* --- Hero Section --- */
+.hero-section {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  box-sizing: border-box;
+  align-items: stretch;
+  color: var(--bowdoin-black);
+}
+
+.hero-content {
+  flex: 1;
+  padding: 2rem 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  text-align: left;
+  max-width: 50vw;
+  margin: 0 auto;
+  z-index: 2;
+
+  background: linear-gradient(135deg, #addae2, #dceeff);
+  background-size: 300% 300%;
+  animation: dreamyFlow 15s ease infinite;
+
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+@keyframes dreamyFlow {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+.hero-title,
+.hero-subtitle,
+.hero-description {
+  font-family: var(--body-font);
+  color: var(--bowdoin-black);
+}
+
+.hero-title {
+  font-family: var(--heading-font);
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.hero-description {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* --- Call-to-Action Buttons --- */
+.hero-cta-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cta-button {
+  font-family: var(--body-font);
+  font-size: 1.1rem;
+  padding: 0.8rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.cta-button.primary {
+  background-color: #006D77;
+  color: #ffffff;
+  border: 2px solid #006D77;
+}
+
+.cta-button.primary:hover {
+  background-color: #005A63;
+  border-color: #004851;
+  transform: translateY(-2px);
+}
+
+.cta-button.secondary {
+  background-color: transparent;
+  color: #006D77;
+  border: 2px solid #006D77;
+}
+
+.cta-button.secondary:hover {
+  background-color: #006D77;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* --- Hero Image --- */
+.hero-image {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero-image img {
+  height: 100%;
+  width: 100%; /* Add this to ensure it fills the width */
+  object-fit: cover; /* Change from 'contain' to 'cover' */
+  object-position: center 60%;
+}
