@@ -62,6 +62,8 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
+app.options("*", cors());
+
 app.use('/api/menus', menusRoute)
 
 // JWT Auth Middleware
