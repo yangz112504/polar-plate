@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const helmet = require('helmet');
 const cors = require('cors');
+const menusRoute = require("./routes/menu.js");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -48,11 +49,9 @@ app.use(cors({
   credentials: true,
 }));
 
-// Logger
-app.use((req, res, next) => {
-  console.log(`[${req.method}] ${req.url}`);
-  next();
-});
+app.use('/api/menus', menusRoute)
+
+
 
 // JWT Auth Middleware
 function authenticateToken(req, res, next) {
@@ -222,6 +221,7 @@ app.get('/api/ratings/:hall/:meal/:date', authenticateToken, async (req, res) =>
   }
 });
 
+// Return average and total ratings for a hall and meal
 app.get('/api/ratings/:hall/:meal', authenticateToken, async (req, res) => {
   const { hall, meal } = req.params;
   const {date} = req.query;

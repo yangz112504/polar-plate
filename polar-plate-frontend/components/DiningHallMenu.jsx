@@ -22,9 +22,10 @@ function DiningHallMenu({ meal, activeTab, setActiveTab }) {
       if (hasFetched.current) return; // Prevent multiple fetches
       hasFetched.current = true;
       try {
-        const res = await fetch("http://localhost:5002/api/menus"); // Flask endpoint
+        const res = await fetch("http://localhost:5001/api/menus"); 
         if (!res.ok) throw new Error(`HTTP error! status ${res.status}`);
         const data = await res.json();
+        console.log(data)
         setMenuMap(data); // { Thorne: {...}, Moulton: {...} }
       } catch (err) {
         console.error("Error fetching menus:", err.message);
