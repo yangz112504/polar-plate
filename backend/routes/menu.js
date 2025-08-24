@@ -60,6 +60,9 @@ router.get("/", async (req, res) => {
       return menu;
     });
 
+    console.log(thorneMenu)
+    console.log(moultonMenu)
+
     res.json({
       Thorne: Object.entries(thorneMenu).map(([category, items]) => ({ category, items })),
       Moulton: Object.entries(moultonMenu).map(([category, items]) => ({ category, items })),
