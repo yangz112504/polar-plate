@@ -66,6 +66,10 @@ function authenticateToken(req, res, next) {
 
 // Routes
 
+app.get("/healthz", (req, res) => {
+  res.status(200).send("OK");
+});
+
 // Register user
 app.post('/api/users', async (req, res) => {
   const { username, email, password } = req.body;
