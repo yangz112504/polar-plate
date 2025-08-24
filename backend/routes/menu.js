@@ -7,8 +7,14 @@ const BOWDOIN_MENU_URL = "https://www.bowdoin.edu/dining/menus/index.html#0";
 
 router.get("/", async (req, res) => {
   let browser;
+  
   try {
-    browser = await chromium.launch({ headless: true });
+    
+    // browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     const page = await browser.newPage();
     await page.goto(BOWDOIN_MENU_URL, { waitUntil: "networkidle" });
 
