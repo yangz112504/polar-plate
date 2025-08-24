@@ -19,7 +19,7 @@ function AverageRating({ average = 0, totalVotes = 0, size = 28 }) {
             <StarFraction key={i} fraction={f} size={size} />
           ))}
         </div>
-        <div>{average.toFixed(1)} / 5</div>
+        <div className="whitespace-nowrap">{average.toFixed(1)}</div>
       </div>
 
       <div className="mt-2 text-center text-sm text-gray-700">

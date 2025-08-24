@@ -91,7 +91,7 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
         </div>
 
         {/* Numeric value */}
-        <div className="text-lg text-gray-800 ml-2">
+        <div className="text-lg text-gray-800 ml-2 whitespace-nowrap">
           {rating > 0 ? `${rating} / 5` : "0 / 5"}
         </div>
       </div>
