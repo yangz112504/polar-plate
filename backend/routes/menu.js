@@ -12,9 +12,9 @@ router.get("/", async (req, res) => {
     
     // browser = await chromium.launch({ headless: true });
     browser = await chromium.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
     const page = await browser.newPage();
     await page.goto(BOWDOIN_MENU_URL, { waitUntil: "networkidle" });
 

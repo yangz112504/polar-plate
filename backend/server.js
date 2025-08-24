@@ -213,8 +213,9 @@ app.get('/api/ratings/:hall/:meal/:date', authenticateToken, async (req, res) =>
 
     // Find all ratings, populate user info (but not password)
     const ratings = await Rating.find({ hall, meal, date })
-      .select("rating").sort({ rating: -1 });
-
+      .populate("user", "username")
+      .sort({ rating: -1 });
+    console.log(ratings)
     res.json({ ratings });
   } catch (err) {
     console.error(err);

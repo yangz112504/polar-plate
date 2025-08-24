@@ -11,6 +11,7 @@ function AllRatings({ hall, meal, refreshKey }) {
       try {
         const token = localStorage.getItem("authToken");
         const today = new Date().toISOString().slice(0, 10);
+        console.log(today)
         const res = await fetch(
           `${frontEndUrl}/api/ratings/${hall}/${meal}/${today}`,
           {
@@ -60,7 +61,7 @@ function AllRatings({ hall, meal, refreshKey }) {
                   <div className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full">
                     <User className="w-5 h-5 text-gray-500" />
                   </div>
-                  <span className="font-medium text-gray-700">Anonymous User</span>
+                  <span className="font-medium text-gray-700">{r.user?.username || "Anonymous User"}</span>
                 </div>
                 <span className="bg-yellow-100 text-yellow-800 font-bold px-3 py-1 rounded-full">
                   {r.rating} ⭐
