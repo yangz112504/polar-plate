@@ -6,6 +6,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod'; 
 import * as z from 'zod'; 
 import { useRouter } from 'next/navigation'; 
+import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
+import { Tooltip } from '@mui/material'; 
 
 // Validation Schema
 const registerSchema = z.object({
@@ -152,15 +154,23 @@ function RegisterPage() {
             )}
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-gray-700 text-sm font-semibold mb-2">
-              Password:
-            </label>
+         <div>
+            <div className="flex items-center justify-between mb-2">
+              <label 
+                htmlFor="password" 
+                className="text-gray-700 text-sm font-semibold"
+              >
+                Password:
+              </label>
+              <Tooltip title="Password is securely hashed with bcrypt" placement='left'>
+                <InfoOutlineIcon fontSize="small" className="text-gray-500 cursor-pointer" />
+              </Tooltip>
+            </div>
             <input
               type="password"
               id="password"
               placeholder="Minimum 6 characters"
-              {...register('password')} 
+              {...register('password')}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006D77] focus:border-transparent transition-all duration-200
                           ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
               aria-invalid={errors.password ? "true" : "false"}
