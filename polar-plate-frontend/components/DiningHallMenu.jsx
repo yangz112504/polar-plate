@@ -4,12 +4,30 @@ import StarRating from "@/components/StarRating";
 import AverageRating from "@/components/AverageRating";
 import AllRatings from "./AllRatings";
 
-function DiningHallMenu({ meal, activeTab, setActiveTab }) {
+function pickMeal() {
+    const date = new Date();
+    const hour = date.getHours();
+    const day = date.getDay(); // 0 = Sunday, 6 = Saturday
+
+    if (day >= 1 && day <= 5) {
+      // Mon–Fri
+      if (hour < 11) return "Breakfast";
+      if (hour < 17) return "Lunch";
+      return "Dinner";
+    } else {
+      // Sat–Sun
+      if (hour < 17) return "Brunch";
+      return "Dinner";
+    }
+}
+
+function DiningHallMenu({ activeTab, setActiveTab }) {
   const [menuMap, setMenuMap] = useState({ Thorne: {}, Moulton: {} });
   const [loading, setLoading] = useState(true);
   const [avgMap, setAvgMap] = useState({ Thorne: 0, Moulton: 0 });
   const [votesMap, setVotesMap] = useState({ Thorne: 0, Moulton: 0 });
   const [refreshKey, setRefreshKey] = useState(0);
+  const [meal, setMeal] = useState(() => pickMeal());
   const hasFetched = useRef(false);
   const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
@@ -23,7 +41,8 @@ function DiningHallMenu({ meal, activeTab, setActiveTab }) {
       if (hasFetched.current) return; // Prevent multiple fetches
       hasFetched.current = true;
       try {
-        const res = await fetch(`${frontEndUrl}/api/menus`);
+        console.log("Fetching meal:", meal);
+        const res = await fetch(`${frontEndUrl}/api/menus/${meal}`);
         if (!res.ok) throw new Error(`HTTP error! status ${res.status}`);
         const data = await res.json();
         console.log(data)
@@ -35,7 +54,7 @@ function DiningHallMenu({ meal, activeTab, setActiveTab }) {
       }
     }
     fetchMenus();
-  }, []);
+  }, [meal]);
 
   useEffect(() => {
     if (!meal || !activeTab) return;

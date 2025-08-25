@@ -11,7 +11,6 @@ function AllRatings({ hall, meal, refreshKey }) {
       try {
         const token = localStorage.getItem("authToken");
         const today = new Date().toISOString().slice(0, 10);
-        console.log(today)
         const res = await fetch(
           `${frontEndUrl}/api/ratings/${hall}/${meal}/${today}`,
           {

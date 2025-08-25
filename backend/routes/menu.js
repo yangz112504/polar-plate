@@ -5,18 +5,38 @@ const { chromium } = require("playwright");
 const router = express.Router();
 const BOWDOIN_MENU_URL = "https://www.bowdoin.edu/dining/menus/index.html#0";
 
-router.get("/", async (req, res) => {
+router.get("/:meal", async (req, res) => {
   let browser;
+
+  const { meal } = req.params; // e.g. Breakfast, Lunch, Dinner, Brunch
+
+  // Map meals to button IDs
+  const mealButtonIds = {
+    Breakfast: "#breakfastl",
+    Brunch: "#brunchl",
+    Lunch: "#lunchl",
+    Dinner: "#dinnerl",
+  };
+
+  if (!mealButtonIds[meal]) {
+    return res.status(400).json({ error: "Invalid meal parameter" });
+  }
   
   try {
-    
     // browser = await chromium.launch({ headless: true });
     browser = await chromium.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     const page = await browser.newPage();
     await page.goto(BOWDOIN_MENU_URL, { waitUntil: "networkidle" });
+
+    await page.click(mealButtonIds[meal]);
+    
+    await Promise.all([
+      page.waitForSelector("#u49 h3, #u49 span, #u49", { timeout: 5000 }),
+      page.waitForSelector("#u48 h3, #u48 span, #u48", { timeout: 5000 }),
+    ]);
 
     // Thorne Data
     const thorneMenu = await page.$eval("#u49", (el) => {

@@ -7,17 +7,9 @@ import DiningHallMenu from "@/components/DiningHallMenu";
 
 function DashboardPage() {
   const router = useRouter();
-  const [meal, setMeal] = useState("");
   const [activeTab, setActiveTab] = useState("Thorne");
   const [username, setUsername] = useState(""); 
   const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
-
-  useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 11) setMeal("Breakfast");
-    else if (hour < 17) setMeal("Lunch");
-    else setMeal("Dinner");
-  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -79,7 +71,6 @@ function DashboardPage() {
 
       {/* Dining hall menu */}
       <DiningHallMenu
-        meal={meal}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
