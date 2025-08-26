@@ -8,18 +8,16 @@ function pickMeal() {
     const date = new Date();
     const hour = date.getHours();
     const day = date.getDay(); // 0 = Sunday, 6 = Saturday
-    //12 am bowdoin dining menu switches
-    // do i need to show breakfast starting 8pm day before? so breakfast from 8pm to 11am, lunch from 11am to 5pm, dinner from 5pm to 8pm
     if (day >= 1 && day <= 5) {
-      // Mon–Fri
-      if (hour < 11) return "Breakfast";
-      if (hour < 17) return "Lunch";
-      return "Dinner";
-    } else {
-      // Sat–Sun
-      if (hour < 17) return "Brunch";
-      return "Dinner";
-    }
+    // Mon–Fri
+    if (hour >= 20 || hour < 11) return "Breakfast"; // 8PM–11AM
+    if (hour < 17) return "Lunch";                   // 11AM–5PM
+    return "Dinner";                                 // 5PM–8PM
+  } else {
+    // Sat–Sun (Brunch/Dinner schedule)
+    if (hour >= 20 || hour < 17) return "Brunch";    // 8PM–5PM
+    return "Dinner";                                 // 5PM–8PM
+  }
 }
 
 function DiningHallMenu({ activeTab, setActiveTab }) {
