@@ -1,32 +1,51 @@
-import React from "react";
+import React, { use } from "react";
 import { useState, useEffect, useRef } from "react";
 import StarRating from "@/components/StarRating";
 import AverageRating from "@/components/AverageRating";
 import AllRatings from "./AllRatings";
 
 function pickMeal() {
-    const date = new Date();
-    const hour = date.getHours();
-    const day = date.getDay(); // 0 = Sunday, 6 = Saturday
-    if (day >= 1 && day <= 5) {
+  const date = new Date();
+  const hour = date.getHours();
+  const day = date.getDay(); // 0 = Sunday, 6 = Saturday
+
+  let adjustedDate = new Date(date);
+
+  if (day >= 1 && day <= 5) {
     // Mon–Fri
-    if (hour >= 20 || hour < 11) return "Breakfast"; // 8PM–11AM
-    if (hour < 17) return "Lunch";                   // 11AM–5PM
-    return "Dinner";                                 // 5PM–8PM
+    if (hour >= 20 || hour < 11) {
+      if (hour >= 20) {
+        // bump date forward after 8pm
+        adjustedDate.setDate(adjustedDate.getDate() + 1);
+      }
+      return { meal: "Breakfast", date: adjustedDate.toDateString() };
+    }
+    if (hour < 17) {
+      return { meal: "Lunch", date: adjustedDate.toDateString() };
+    }
+    return { meal: "Dinner", date: adjustedDate.toDateString() };
   } else {
     // Sat–Sun (Brunch/Dinner schedule)
-    if (hour >= 20 || hour < 17) return "Brunch";    // 8PM–5PM
-    return "Dinner";                                 // 5PM–8PM
+    if (hour >= 20 || hour < 17) {
+      if (hour >= 20) {
+        adjustedDate.setDate(adjustedDate.getDate() + 1);
+      }
+      return { meal: "Brunch", date: adjustedDate.toDateString() };
+    }
+    return { meal: "Dinner", date: adjustedDate.toDateString() };
   }
 }
 
 function DiningHallMenu({ activeTab, setActiveTab }) {
+  const mealInfo = pickMeal();
+  const [meal, setMeal] = useState(() => mealInfo.meal);
+  const [date, setDate] = useState(() => mealInfo.date);
   const [menuMap, setMenuMap] = useState({ Thorne: {}, Moulton: {} });
   const [loading, setLoading] = useState(true);
   const [avgMap, setAvgMap] = useState({ Thorne: 0, Moulton: 0 });
   const [votesMap, setVotesMap] = useState({ Thorne: 0, Moulton: 0 });
   const [refreshKey, setRefreshKey] = useState(0);
-  const [meal, setMeal] = useState(() => pickMeal());
+
   const hasFetched = useRef(false);
   const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
@@ -125,7 +144,7 @@ function DiningHallMenu({ activeTab, setActiveTab }) {
       </div>
 
       <h1 className="text-4xl font-bold mb-2 mt-12">{meal}</h1>
-      <p className="mb-6 text-gray-700">{new Date().toDateString()}</p>
+      <p className="mb-6 text-gray-700">{date}</p>
 
       <AverageRating average={avgMap[activeTab]} totalVotes={votesMap[activeTab]} />
 
