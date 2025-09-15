@@ -31,6 +31,7 @@ router.get("/:meal", async (req, res) => {
     const page = await browser.newPage();
     await page.goto(BOWDOIN_MENU_URL, { waitUntil: "networkidle" });
 
+    await page.waitForSelector(mealButtonIds[meal], { state: "visible", timeout: 10000 });
     await page.click(mealButtonIds[meal]);
     
     await Promise.all([

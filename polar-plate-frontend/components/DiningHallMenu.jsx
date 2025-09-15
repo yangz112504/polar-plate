@@ -25,7 +25,17 @@ function pickMeal() {
     }
     return { meal: "Dinner", date: adjustedDate.toDateString() };
   } else {
-    // Sat–Sun (Brunch/Dinner schedule)
+  // Sat–Sun (Brunch/Dinner schedule)
+  if (day === 0) {
+    // Sunday special case
+    if (hour >= 17) {
+      // 5 PM to midnight -> Dinner
+      return { meal: "Dinner", date: adjustedDate.toDateString() };
+    }
+    // Otherwise Sunday before 5 PM -> Brunch
+    return { meal: "Brunch", date: adjustedDate.toDateString() };
+  } else {
+    // Saturday (original logic)
     if (hour >= 20 || hour < 17) {
       if (hour >= 20) {
         adjustedDate.setDate(adjustedDate.getDate() + 1);
@@ -34,6 +44,7 @@ function pickMeal() {
     }
     return { meal: "Dinner", date: adjustedDate.toDateString() };
   }
+}
 }
 
 function DiningHallMenu({ activeTab, setActiveTab }) {
