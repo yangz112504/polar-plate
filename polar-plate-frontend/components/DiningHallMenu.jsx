@@ -11,41 +11,46 @@ function pickMeal() {
 
   let adjustedDate = new Date(date);
 
+  // Weekdays (Mon–Fri)
   if (day >= 1 && day <= 5) {
-    // Mon–Fri
     if (hour >= 20 || hour < 11) {
-      if (hour >= 20) {
-        // bump date forward after 8pm
-        adjustedDate.setDate(adjustedDate.getDate() + 1);
-      }
+      if (hour >= 20) adjustedDate.setDate(adjustedDate.getDate() + 1);
       return { meal: "Breakfast", date: adjustedDate.toDateString() };
     }
     if (hour < 17) {
       return { meal: "Lunch", date: adjustedDate.toDateString() };
     }
     return { meal: "Dinner", date: adjustedDate.toDateString() };
-  } else {
-  // Sat–Sun (Brunch/Dinner schedule)
-  if (day === 0) {
-    // Sunday special case
-    if (hour >= 17) {
-      // 5 PM to midnight -> Dinner
-      return { meal: "Dinner", date: adjustedDate.toDateString() };
+  }
+
+  // Weekend (Sat–Sun)
+  if (day === 6) {
+    // Saturday
+    if (hour >= 20) {
+      // After 8 PM Saturday -> Sunday Brunch
+      adjustedDate.setDate(adjustedDate.getDate() + 1);
+      return { meal: "Brunch", date: adjustedDate.toDateString() };
     }
-    // Otherwise Sunday before 5 PM -> Brunch
-    return { meal: "Brunch", date: adjustedDate.toDateString() };
-  } else {
-    // Saturday (original logic)
-    if (hour >= 20 || hour < 17) {
-      if (hour >= 20) {
-        adjustedDate.setDate(adjustedDate.getDate() + 1);
-      }
+    if (hour < 17) {
+      return { meal: "Brunch", date: adjustedDate.toDateString() };
+    }
+    return { meal: "Dinner", date: adjustedDate.toDateString() };
+  }
+
+  if (day === 0) {
+    // Sunday
+    if (hour >= 20) {
+      // After 8 PM Sunday -> Monday Breakfast
+      adjustedDate.setDate(adjustedDate.getDate() + 1);
+      return { meal: "Breakfast", date: adjustedDate.toDateString() };
+    }
+    if (hour < 17) {
       return { meal: "Brunch", date: adjustedDate.toDateString() };
     }
     return { meal: "Dinner", date: adjustedDate.toDateString() };
   }
 }
-}
+
 
 function DiningHallMenu({ activeTab, setActiveTab }) {
   const mealInfo = pickMeal();
