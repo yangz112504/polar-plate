@@ -7,12 +7,18 @@ import AllRatings from "./AllRatings";
 function pickMeal() {
   const date = new Date();
   const hour = date.getHours();
-  const day = date.getDay(); // 0 = Sunday, 6 = Saturday
+  const day = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
 
   let adjustedDate = new Date(date);
 
   // Weekdays (Mon–Fri)
   if (day >= 1 && day <= 5) {
+    // Special case: Friday after 8 PM -> Saturday Brunch
+    if (day === 5 && hour >= 20) {
+      adjustedDate.setDate(adjustedDate.getDate() + 1);
+      return { meal: "Brunch", date: adjustedDate.toDateString() };
+    }
+
     if (hour >= 20 || hour < 11) {
       if (hour >= 20) adjustedDate.setDate(adjustedDate.getDate() + 1);
       return { meal: "Breakfast", date: adjustedDate.toDateString() };
@@ -50,6 +56,7 @@ function pickMeal() {
     return { meal: "Dinner", date: adjustedDate.toDateString() };
   }
 }
+
 
 
 function DiningHallMenu({ activeTab, setActiveTab }) {
