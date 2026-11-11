@@ -1,2 +1,5 @@
 .env
 menuScraper.py
+
+# dependencies
+node_modules/
