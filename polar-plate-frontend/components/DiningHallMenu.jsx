@@ -63,7 +63,8 @@ function DiningHallMenu({ activeTab, setActiveTab }) {
   const mealInfo = pickMeal();
   const [meal, setMeal] = useState(() => mealInfo.meal);
   const [date, setDate] = useState(() => mealInfo.date);
-  const [menuMap, setMenuMap] = useState({ Thorne: {}, Moulton: {} });
+  // Arrays (not objects) so rendering with .map still works when the menu request fails.
+  const [menuMap, setMenuMap] = useState({ Thorne: [], Moulton: [] });
   const [loading, setLoading] = useState(true);
   const [avgMap, setAvgMap] = useState({ Thorne: 0, Moulton: 0 });
   const [votesMap, setVotesMap] = useState({ Thorne: 0, Moulton: 0 });
@@ -84,10 +85,11 @@ function DiningHallMenu({ activeTab, setActiveTab }) {
       try {
         console.log("Fetching meal:", meal);
         const res = await fetch(`${frontEndUrl}/api/menus/${meal}`);
-        if (!res.ok) throw new Error(`HTTP error! status ${res.status}`);
+        // Read the body even on errors: the backend says which hall failed and why (for developers).
         const data = await res.json();
-        console.log(data)
-        setMenuMap(data); 
+        if (data.errors) console.error("Menu errors by hall:", data.errors);
+        if (!res.ok) throw new Error(data.error || `HTTP error! status ${res.status}`);
+        setMenuMap(data);
       } catch (err) {
         console.error("Error fetching menus:", err.message);
       } finally {
@@ -173,14 +175,19 @@ function DiningHallMenu({ activeTab, setActiveTab }) {
 
       {/* Menu grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full max-w-7xl border border-black mx-auto">
-        {menuMap[activeTab].map(({ category, items }) => (
-          <div key={category} className="p-4 text-left flex flex-col">
-            <h2 className="text-xl font-bold mb-2 border-b border-gray-300">{category}</h2>
-            <ul className="list-disc pl-5 space-y-1 text-gray-700">
-              {items.map((item, i) => <li key={i}>{item}</li>)}
-            </ul>
-          </div>
-        ))}
+        {menuMap[activeTab].length === 0 ? (
+          // Shown whether Bowdoin has no menu or the fetch failed (the console says which).
+          <p className="p-6 text-gray-600 col-span-full">No menu found</p>
+        ) : (
+          menuMap[activeTab].map(({ category, items }) => (
+            <div key={category} className="p-4 text-left flex flex-col">
+              <h2 className="text-xl font-bold mb-2 border-b border-gray-300">{category}</h2>
+              <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                {items.map((item, i) => <li key={i}>{item}</li>)}
+              </ul>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Ratings section */}
