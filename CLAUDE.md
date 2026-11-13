@@ -1,56 +1,70 @@
-# CLAUDE.md
+# Polar Plate
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Why
+A dining hall menu + rating app: it scrapes dining hall menus, shows them per hall/meal/day, and lets
+logged-in users rate meals. These are the starting features that were implemented a year ago. Expect new features to be added.
+It is also a **learning project**: the owner is a junior engineer teaching
+themselves system design and how to work well with agentic AI. Understanding matters more than speed.
 
-## Project
+## What (current stack — expect this to change)
+- `backend/` — Node + Express 5, Postgres (Supabase) via Drizzle, JWT auth, Playwright/Cheerio scraping.
+  Entry: `backend/src/server.ts` (`src/app.ts` wires routes, auth service and repositories; schema in
+  `src/db/schema.ts`; tests in `backend/tests/`); `backend/routes/menu.js` (menu scraper, still JS).
+- `polar-plate-frontend/` — Next.js 15 (App Router) + React 19, Tailwind, MUI, react-hook-form + zod.
+  Pages in `app/`, shared UI in `components/`.
+- Currently plain JavaScript; the plan is to migrate to **TypeScript**. Write new code in TypeScript.
+- Database/caching are open decisions (Mongo may become Supabase; Redis cache is possible). Don't
+  hard-wire assumptions about them; isolate data access so a swap stays cheap.
 
-"The Polar Plate" is a small app for rating Bowdoin dining hall meals. Users register or log in, see that day's menu for two halls (Thorne and Moulton), and rate each meal out of 5 and see other users' ratings. The repo has two independent npm projects with no workspace or root `package.json`:
+## How
+- Backend: `cd backend && npm run dev` (needs `.env` with `DATABASE_URL`, `SECRET_KEY`); tests: start Postgres with
+  `docker compose -f docker-compose.test.yml up -d`, then `npm test`; typecheck with `npm run typecheck`.
+- Frontend: `cd polar-plate-frontend && npm run dev`; lint with `npm run lint`.
+- All tests at once: `./run-all-tests.sh` from the repo root. It runs the backend suite (and the frontend
+  one once it defines a `test` script), keeps going if one fails, prints PASSED/FAILED/SKIPPED per suite,
+  and exits nonzero if any failed. It never installs deps or starts Postgres — start the test DB first.
+- No frontend test suite exists yet. When verifying a change, say exactly how you checked it. If a feature
+  deserves tests, propose adding a test setup rather than silently skipping verification.
+  New work follows the tests-first rules in "Testing: tests first (TDD)" below.
 
-- `backend/`: Express 5 API, MongoDB via Mongoose, JWT auth, Playwright scraper.
-- `polar-plate-frontend/`: Next.js 15 App Router (JavaScript, not TypeScript), Tailwind 4, MUI, and a few Radix/shadcn-style utilities.
+## Workflow: plan together, then build
+1. For any non-trivial feature, we start in plan mode. Don't write code before the plan is agreed.
+2. Present 2–3 viable designs. For each, list **pros, cons, and trade-offs** (complexity, cost,
+   scalability, failure modes, how hard it is to change later), then give your recommendation and why.
+   The owner decides.
+3. Explain the *why* behind choices in plain language, and name the concept (e.g. "this is a cache-aside
+   pattern") so it can be looked up. Flag where a decision would differ at larger scale.
+4. If the request is ambiguous or a simpler approach exists, say so before implementing.
 
-There are no tests in either project, and no test runner is configured.
+## Design log
+- `SystemDesign.md` (untracked, personal learning notes) records each important design decision: the
+  options we compared, their trade-offs, what we chose and why. Whenever we make or change a system
+  design decision (database, schema, architecture, library, security, testing approach), add or update
+  its entry in the same turn. Keep entries short and in plain language; never put secrets in it.
 
-## Commands
+## Testing: tests first (TDD)
+- Write the tests **before** the implementation. Tests define the expected behavior; the implementation
+  is then written to make them pass. Never write tests after the fact that merely mirror what the code
+  already does — that proves nothing.
+- Derive tests from the agreed plan/requirements (inputs, outputs, edge cases, error cases), not from
+  the implementation. Show the tests to the owner and get agreement before implementing.
+- Run the tests and confirm they fail for the right reason before writing any implementation code.
+- Then write the simplest implementation that makes them pass. If a test fails, fix the implementation,
+  not the test. Only change a test if it is genuinely wrong, and say so explicitly and why.
+- If no test setup exists yet for the area being changed, propose one as part of the plan first.
+- Say exactly which tests were run and their results when reporting a change as done.
 
-Backend (run from `backend/`):
-
-- `npm install`: `postinstall` also runs `npx playwright install` to download Chromium for the menu scraper.
-- `npm run dev`: starts the API with nodemon on `PORT` (default 5001).
-- `npm start`: same, without nodemon. There is no lint or test script.
-
-Frontend (run from `polar-plate-frontend/`):
-
-- `npm run dev`: Next dev server with Turbopack on http://localhost:3000.
-- `npm run build` / `npm start`: production build and server.
-- `npm run lint`: `next lint` with the flat config in `eslint.config.mjs` (`next/core-web-vitals`).
-
-Environment:
-
-- Backend `.env` (gitignored) needs `MONGO_URI`, `SECRET_KEY` (JWT signing), and optionally `PORT`. The Mongo database name is hardcoded as `fansDB` in `server.js`.
-- Frontend env file (e.g. `.env.local`, gitignored) needs `NEXT_PUBLIC_FRONTEND_URL`. Despite the name, this is the **backend API base URL** (e.g. `http://localhost:5001`), not the frontend's own URL. Every `fetch` in the frontend prefixes it.
-
-## Architecture
-
-### Backend: one API file plus a scraper route
-
-- `backend/server.js` holds the Mongoose models (`User`, `Rating`), the JWT middleware `authenticateToken`, and all auth and rating routes. It mounts the menu router at `/api/menus`.
-- `backend/routes/menu.js` is the scraper. `GET /api/menus/:meal` launches headless Chromium with Playwright, loads the Bowdoin dining menu page, clicks the meal tab, and reads two fixed element IDs (`#u49` for Thorne, `#u48` for Moulton). It parses `h3` category headers and `span` items into `{ Thorne: [{category, items}], Moulton: [...] }`. The scrape is live on every request. Nothing is cached, and the browser is closed in `finally`.
-- The `Rating` document is keyed by `(user, hall, meal, date)`. One user has at most one rating per meal per date, and a second submit updates the existing document. The `date` field is a string produced by the frontend's `Date.toDateString()`, so changing that format breaks existing data.
-- Average and vote counts are computed on each request with a Mongo aggregation (`$avg`, `$sum`), not stored. Averages are returned as strings from `toFixed(2)`.
-- Auth is stateless. Login and registration return a JWT with a 7-day expiry, containing `userId` and `username`. `DELETE /api/sessions` does nothing server-side. Logout is purely the client deleting the token.
-
-### Frontend: client-side auth and a single dashboard
-
-- The JWT is stored in `localStorage` under `authToken`. There is no server session and no cookie.
-- `components/withAuth.jsx` is a higher-order component that wraps protected pages. It checks that the token exists and that it isn't expired by decoding it with `jwt-decode`, and redirects to `/login` otherwise. The dashboard is wrapped with it. Pages that need the token themselves read `localStorage` directly.
-- The main screen is `app/dashboard/page.jsx`, which renders `components/DiningHallMenu.jsx` with a Thorne/Moulton tab switch.
-- `DiningHallMenu.jsx` decides which meal and which date to show. `pickMeal()` uses the local clock and the weekday to choose Breakfast, Lunch, Dinner, or Brunch. The cutoffs are 11:00, 17:00, and 20:00, with weekend and Friday/Sunday-evening rules. After 20:00 it advances the date to tomorrow. Any change to meal timing should be made here, and the backend has no equivalent logic.
-- Child components: `StarRating` (submits and loads the user's own rating), `AverageRating`, and `AllRatings`. Each makes its own `fetch` calls to the backend with the bearer token. There is no shared API client or state store.
-
-### Things that will bite you
-
-- The menu scrape depends on the Bowdoin page's DOM IDs (`#breakfastl`, `#u48`, `#u49`, etc.). If the page changes, the scraper breaks silently into a 500.
-- The scraper's `waitForSelector` and `networkidle` waits can take several seconds per request.
-- `backend/.gitignore` lists `menuScraper.py`, but the server does not use it. The Python scraper is not part of the running app.
-- `node_modules` directories are currently tracked in git. Don't stage them.
+## Code expectations
+- Every function gets a normal-length docstring (TSDoc/JSDoc): what it does, params, return value,
+  and notable side effects or errors. Not a one-liner, not an essay.
+- Add comments where the code isn't self-evident — explain *why*, not what. The owner must be able to
+  read and understand everything you write; prefer clear code over clever code.
+- Follow idiomatic practice for the stack: typed code with no `any` unless justified, thin Express
+  routes with logic in separate modules, validated input at API boundaries, secrets only in env vars,
+  async errors handled, and standard Next.js/React patterns.
+- Scraping: be a polite client — prefer an official API or JSON endpoint over scraping, cache results,
+  rate-limit and set timeouts, retry with backoff, and fail gracefully when the page structure changes.
+  Keep selectors and parsing isolated so a site change touches one place.
+- Keep changes small and scoped: only touch what the task needs, match existing style, and mention
+  (DON'T FIX) unrelated problems you notice. Clean up anything your change leaves unused.
+- Don't add features, abstractions, or configurability beyond what was agreed in the plan.

@@ -1,0 +1,3 @@
+ALTER TABLE "meals" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "ratings" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;

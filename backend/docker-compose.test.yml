@@ -1,0 +1,10 @@
+# Local Postgres used only by the test suite (values are not secrets).
+services:
+  postgres-test:
+    image: postgres:16
+    ports:
+      - "54329:5432"
+    environment:
+      POSTGRES_DB: polar_plate_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
