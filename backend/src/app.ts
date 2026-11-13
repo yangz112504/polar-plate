@@ -34,6 +34,7 @@ export function createApp(deps: AppDeps): Express {
   const ratings = createRatingRepository(deps.db);
   const auth = createAuthService(users, deps.secretKey);
   const requireAuth = createRequireAuth(auth);
+  const now = deps.now ?? (() => new Date());
 
   const app = express();
   app.use(express.json());
@@ -41,13 +42,13 @@ export function createApp(deps: AppDeps): Express {
   app.use(helmet());
   app.use(cors());
 
-  if (deps.menuService) app.use(createMenuRoutes({ menuService: deps.menuService, now: deps.now ?? (() => new Date()) }));
-  
+  if (deps.menuService) app.use(createMenuRoutes({ menuService: deps.menuService, now }));
+
   app.get("/healthz", (_req, res) => {
     res.status(200).send("OK");
   });
   app.use(createUserRoutes({ auth, users, requireAuth }));
-  app.use(createRatingRoutes({ ratings, meals, requireAuth }));
+  app.use(createRatingRoutes({ ratings, meals, requireAuth, now }));
 
   // Express 5 forwards errors thrown in async handlers here. Log details server-side,
   // but never leak them to the client.

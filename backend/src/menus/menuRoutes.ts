@@ -1,17 +1,25 @@
 import { Router } from "express";
 import { dayKey } from "../lib/dayKey";
 import type { MenuService } from "./menuService";
+import { getSchedule } from "./schedule";
 
 const VALID_MEALS = new Set(["Breakfast", "Brunch", "Lunch", "Dinner"]);
 
 /**
- * Builds GET /api/menus/:meal. The server decides the date (dayKey), never the client.
+ * Builds GET /api/menus/schedule (tabs + default meal) and GET /api/menus/:meal.
+ * The server decides the date (dayKey), never the client.
  * Responds 200 with both halls (plus `errors` if one failed), or 502 if both halls failed.
  * @param deps.menuService Source of menus.
  * @param deps.now Clock (injected so tests can fix the time).
  */
 export function createMenuRoutes(deps: { menuService: MenuService; now: () => Date }): Router {
   const router = Router();
+
+  // Which meal tabs to show today and which opens first. Must be registered before
+  // /api/menus/:meal, otherwise Express would treat "schedule" as a meal name.
+  router.get("/api/menus/schedule", (_req, res) => {
+    res.json(getSchedule(deps.now()));
+  });
 
   router.get("/api/menus/:meal", async (req, res) => {
     const { meal } = req.params;

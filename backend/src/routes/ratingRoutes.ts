@@ -1,18 +1,15 @@
 import { Router, type RequestHandler } from "express";
 import { z } from "zod";
+import { dayKey } from "../lib/dayKey";
 import type { MealRepository } from "../meals/mealRepository";
 import { InvalidScoreError, type RatingRepository } from "../ratings/ratingRepository";
 import type { AuthedRequest } from "./authMiddleware";
 
-/** 'YYYY-MM-DD' that is also a real calendar day (rejects 2026-13-45). */
-const dateString = z.string().refine((s) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  const [y, m, d] = s.split("-").map(Number);
-  const parsed = new Date(Date.UTC(y, m - 1, d));
-  return parsed.getUTCFullYear() === y && parsed.getUTCMonth() === m - 1 && parsed.getUTCDate() === d;
-}, "Invalid date");
-const name = z.string().min(1);
-const mealKey = z.object({ hall: name, meal: name, date: dateString });
+// Allow-lists: without them any string would create a `meals` row (e.g. "Snack").
+const hall = z.enum(["Thorne", "Moulton"]);
+const meal = z.enum(["Breakfast", "Brunch", "Lunch", "Dinner"]);
+// The date is deliberately absent: the server decides the day (dayKey), never the client.
+const mealKey = z.object({ hall, meal });
 const rateBody = mealKey.extend({ rating: z.number() });
 
 /** Formats an average the way the old API did: 2-decimal string, or the number 0 when unrated. */
@@ -21,28 +18,33 @@ function formatAverage(average: number | null): string | 0 {
 }
 
 /**
- * Builds the rating routes. The frontend still identifies a meal by hall/meal/date,
- * so each route translates that into a `meals` row.
+ * Builds the rating routes. A meal is identified by hall + meal name; the day is always
+ * the server's current New York day, so each route translates that into a `meals` row.
+ * @param deps.ratings Rating repository.
+ * @param deps.meals Meal repository.
+ * @param deps.requireAuth Middleware that rejects requests without a valid token.
+ * @param deps.now Clock (injected so tests can fix the time).
  */
 export function createRatingRoutes(deps: {
   ratings: RatingRepository;
   meals: MealRepository;
   requireAuth: RequestHandler;
+  now: () => Date;
 }): Router {
   const router = Router();
   router.use("/api/ratings", deps.requireAuth);
 
-  // Submit or update the caller's rating, then return fresh stats.
+  // Submit or update the caller's rating for today's meal, then return fresh stats.
   router.post("/api/ratings", async (req, res) => {
     const body = rateBody.safeParse(req.body);
     if (!body.success) {
-      res.status(400).json({ message: "Hall, meal, and rating required (date as YYYY-MM-DD)" });
+      res.status(400).json({ message: "Valid hall, meal, and rating required" });
       return;
     }
-    const { hall, meal, date, rating } = body.data;
+    const { hall, meal, rating } = body.data;
     const { userId } = (req as AuthedRequest).user;
     try {
-      const { id: mealId } = await deps.meals.getOrCreateMeal(date, hall, meal);
+      const { id: mealId } = await deps.meals.getOrCreateMeal(dayKey(deps.now()), hall, meal);
       const { created } = await deps.ratings.upsertRating({ userId, mealId, score: rating });
       const stats = await deps.ratings.getMealStats(mealId);
       res.json({
@@ -65,37 +67,34 @@ export function createRatingRoutes(deps: {
   router.get("/api/ratings/user", async (req, res) => {
     const query = mealKey.safeParse(req.query);
     if (!query.success) {
-      res.status(400).json({ message: "Hall, meal, and date required" });
+      res.status(400).json({ message: "Valid hall and meal required" });
       return;
     }
-    const { hall, meal, date } = query.data;
-    const found = await deps.meals.findMeal(date, hall, meal);
+    const found = await deps.meals.findMeal(dayKey(deps.now()), query.data.hall, query.data.meal);
     const userRating = found ? await deps.ratings.findUserRating((req as AuthedRequest).user.userId, found.id) : null;
     res.json({ userRating });
   });
 
-  // Everyone's ratings for one meal, highest first, in the old response shape.
-  router.get("/api/ratings/:hall/:meal/:date", async (req, res) => {
+  // Everyone's ratings for today's meal, highest first, in the old response shape.
+  router.get("/api/ratings/:hall/:meal/all", async (req, res) => {
     const params = mealKey.safeParse(req.params);
     if (!params.success) {
-      res.status(400).json({ message: "Invalid hall, meal or date" });
+      res.status(400).json({ message: "Invalid hall or meal" });
       return;
     }
-    const { hall, meal, date } = params.data;
-    const found = await deps.meals.findMeal(date, hall, meal);
+    const found = await deps.meals.findMeal(dayKey(deps.now()), params.data.hall, params.data.meal);
     const rows = found ? await deps.ratings.listRatingsForMeal(found.id) : [];
     res.json({ ratings: rows.map((r) => ({ _id: r.id, rating: r.score, user: { username: r.username } })) });
   });
 
-  // Average and count for one meal.
+  // Average and count for today's meal.
   router.get("/api/ratings/:hall/:meal", async (req, res) => {
-    const params = mealKey.safeParse({ ...req.params, date: req.query.date });
+    const params = mealKey.safeParse(req.params);
     if (!params.success) {
-      res.status(400).json({ message: "Hall, meal, and date required" });
+      res.status(400).json({ message: "Invalid hall or meal" });
       return;
     }
-    const { hall, meal, date } = params.data;
-    const found = await deps.meals.findMeal(date, hall, meal);
+    const found = await deps.meals.findMeal(dayKey(deps.now()), params.data.hall, params.data.meal);
     const stats = found ? await deps.ratings.getMealStats(found.id) : { average: null, count: 0 };
     res.json({ avgRating: formatAverage(stats.average), totalRatings: stats.count });
   });

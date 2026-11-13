@@ -17,10 +17,9 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
 
     const fetchUserRating = async () => {
       try {
-        const currentDate = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
         const token = localStorage.getItem("authToken");
         const res = await fetch(
-          `${frontEndUrl}/api/ratings/user?hall=${activeTab}&meal=${meal}&date=${currentDate}`,
+          `${frontEndUrl}/api/ratings/user?hall=${activeTab}&meal=${meal}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
@@ -42,7 +41,6 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
       return;
     }
     try {
-      const currentDate = new Date().toISOString().slice(0, 10);
       const token = localStorage.getItem("authToken");
       const res = await fetch(`${frontEndUrl}/api/ratings`, {
         method: "POST",
@@ -50,7 +48,7 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ hall: activeTab, meal, rating, date: currentDate }),
+        body: JSON.stringify({ hall: activeTab, meal, rating }),
       });
 
       const data = await res.json();

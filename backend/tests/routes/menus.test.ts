@@ -18,6 +18,33 @@ function appWith(getMenus: MenuService["getMenus"], now = new Date("2026-11-12T1
   return { app: createApp({ db, secretKey: "s", menuService, now: () => now }), menuService };
 }
 
+describe("GET /api/menus/schedule", () => {
+  it("returns the server's date, the tabs and the default tab (Thursday 10:00 ET -> Lunch)", async () => {
+    const { app } = appWith(async () => menus);
+    const res = await request(app).get("/api/menus/schedule");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ date: "2026-11-12", meals: ["Breakfast", "Lunch", "Dinner"], defaultMeal: "Lunch" });
+  });
+
+  it("returns Brunch + Dinner on a weekend", async () => {
+    const { app } = appWith(async () => menus, new Date("2026-11-14T15:00:00Z"));
+    const res = await request(app).get("/api/menus/schedule");
+    expect(res.body).toEqual({ date: "2026-11-14", meals: ["Brunch", "Dinner"], defaultMeal: "Brunch" });
+  });
+
+  it("is not captured by /:meal: no 'Invalid meal parameter' and the menu service is not called", async () => {
+    const { app, menuService } = appWith(async () => menus);
+    const res = await request(app).get("/api/menus/schedule");
+    expect(res.body.error).toBeUndefined();
+    expect(menuService.getMenus).not.toHaveBeenCalled();
+  });
+
+  it("needs no login", async () => {
+    const { app } = appWith(async () => menus);
+    expect((await request(app).get("/api/menus/schedule")).status).toBe(200);
+  });
+});
+
 describe("GET /api/menus/:meal", () => {
   it("returns both halls as [{category, items}] (the shape the frontend already uses)", async () => {
     const { app } = appWith(async () => menus);
