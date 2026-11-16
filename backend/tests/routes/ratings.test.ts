@@ -119,8 +119,31 @@ describe("POST /api/ratings", () => {
     expect(await count("ratings")).toBe(0);
   });
 
-  it.each(["Breakfast", "Brunch", "Lunch", "Dinner"])("accepts meal %s on either hall", async (m) => {
+  // Only meals the schedule serves that day can be rated (Thursday = Breakfast/Lunch/Dinner).
+  it.each(["Breakfast", "Lunch", "Dinner"])("accepts weekday meal %s on either hall", async (m) => {
     expect((await rate(aliceToken, { hall: "Moulton", meal: m, rating: 3 })).status).toBe(200);
+  });
+
+  it("rejects Brunch on a weekday: 400, and no meal or rating is created", async () => {
+    const res = await rate(aliceToken, { ...meal, meal: "Brunch", rating: 4 });
+    expect(res.status).toBe(400);
+    expect(await count("meals")).toBe(0);
+    expect(await count("ratings")).toBe(0);
+  });
+
+  describe("on a weekend (Saturday 2026-11-14: Brunch + Dinner)", () => {
+    const saturday = appAt(new Date("2026-11-14T15:00:00Z"));
+
+    it.each(["Brunch", "Dinner"])("accepts %s", async (m) => {
+      expect((await rate(aliceToken, { ...meal, meal: m, rating: 3 }, saturday)).status).toBe(200);
+    });
+
+    it.each(["Breakfast", "Lunch"])("rejects %s: 400, and no meal or rating is created", async (m) => {
+      const res = await rate(aliceToken, { ...meal, meal: m, rating: 3 }, saturday);
+      expect(res.status).toBe(400);
+      expect(await count("meals")).toBe(0);
+      expect(await count("ratings")).toBe(0);
+    });
   });
 
   it("keeps ratings for other days, halls and meals separate", async () => {

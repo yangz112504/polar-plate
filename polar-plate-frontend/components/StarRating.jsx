@@ -15,6 +15,8 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
     setRating(0);
     setHover(null);
 
+    // Set when the user switches tab before the response arrives, so a stale rating isn't shown.
+    let cancelled = false;
     const fetchUserRating = async () => {
       try {
         const token = localStorage.getItem("authToken");
@@ -26,13 +28,16 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
         if (!res.ok) throw new Error(data.message);
 
         // Set stars if user already rated this meal
-        setRating(data.userRating || 0);
+        if (!cancelled) setRating(data.userRating || 0);
       } catch (err) {
         console.error("Error fetching user rating:", err.message);
       }
     };
 
     fetchUserRating();
+    return () => {
+      cancelled = true;
+    };
   }, [meal, activeTab]);
 
   const handleSubmit = async () => {

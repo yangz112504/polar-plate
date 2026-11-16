@@ -2,6 +2,7 @@ import { Router, type RequestHandler } from "express";
 import { z } from "zod";
 import { dayKey } from "../lib/dayKey";
 import type { MealRepository } from "../meals/mealRepository";
+import { getSchedule } from "../menus/schedule";
 import { InvalidScoreError, type RatingRepository } from "../ratings/ratingRepository";
 import type { AuthedRequest } from "./authMiddleware";
 
@@ -42,9 +43,16 @@ export function createRatingRoutes(deps: {
       return;
     }
     const { hall, meal, rating } = body.data;
+    // Only meals served today can be rated (no Lunch on a Saturday), so the schedule is the single
+    // source of truth for both the tabs and what may be rated. Checked before touching the DB.
+    const schedule = getSchedule(deps.now());
+    if (!schedule.meals.includes(meal)) {
+      res.status(400).json({ message: `${meal} is not served today` });
+      return;
+    }
     const { userId } = (req as AuthedRequest).user;
     try {
-      const { id: mealId } = await deps.meals.getOrCreateMeal(dayKey(deps.now()), hall, meal);
+      const { id: mealId } = await deps.meals.getOrCreateMeal(schedule.date, hall, meal);
       const { created } = await deps.ratings.upsertRating({ userId, mealId, score: rating });
       const stats = await deps.ratings.getMealStats(mealId);
       res.json({

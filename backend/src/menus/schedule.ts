@@ -1,3 +1,5 @@
+import { dayKey } from "../lib/dayKey";
+
 /** The meals Bowdoin serves. Weekdays use Breakfast/Lunch/Dinner; weekends use Brunch/Dinner. */
 export type ScheduleMeal = "Breakfast" | "Brunch" | "Lunch" | "Dinner";
 
@@ -11,12 +13,12 @@ export interface Schedule {
   defaultMeal: ScheduleMeal;
 }
 
-/** Formatter reused across calls. h23 avoids the "24:00" some engines print at midnight. */
+/**
+ * Formatter reused across calls; reads only weekday and hour (the date comes from dayKey).
+ * h23 avoids the "24:00" some engines print at midnight.
+ */
 const nyParts = new Intl.DateTimeFormat("en-CA", {
   timeZone: "America/New_York",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
   weekday: "short",
   hour: "2-digit",
   hourCycle: "h23",
@@ -33,7 +35,9 @@ const nyParts = new Intl.DateTimeFormat("en-CA", {
  */
 export function getSchedule(now: Date): Schedule {
   const p = Object.fromEntries(nyParts.formatToParts(now).map((part) => [part.type, part.value]));
-  const date = `${p.year}-${p.month}-${p.day}`;
+  // One definition of "Bowdoin's day" for the whole app, so this date always matches
+  // the day that menus and ratings are stored under.
+  const date = dayKey(now);
   const hour = Number(p.hour);
   const isWeekend = p.weekday === "Sat" || p.weekday === "Sun";
 

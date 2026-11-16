@@ -1,5 +1,4 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import StarRating from "@/components/StarRating";
 import AverageRating from "@/components/AverageRating";
 import AllRatings from "./AllRatings";
@@ -23,6 +22,8 @@ function DiningHallMenu({ activeTab, setActiveTab }) {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
+  // Counts ratings requests so a slow, older response can't overwrite a newer one.
+  const ratingsRequestId = useRef(0);
 
   const handleSubmitSuccess = () => {
     fetchRatings();
@@ -87,6 +88,7 @@ function DiningHallMenu({ activeTab, setActiveTab }) {
   const fetchRatings = async () => {
     if (!meal || !activeTab) return;
 
+    const requestId = ++ratingsRequestId.current;
     try {
       const token = localStorage.getItem("authToken");
 
@@ -97,6 +99,8 @@ function DiningHallMenu({ activeTab, setActiveTab }) {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
+      // A newer request started while this one was in flight (e.g. the user switched tabs): drop this result.
+      if (requestId !== ratingsRequestId.current) return;
 
     setAvgMap(prev => ({
       ...prev,
