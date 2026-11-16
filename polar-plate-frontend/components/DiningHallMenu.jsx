@@ -1,100 +1,77 @@
-import React, { use } from "react";
 import { useState, useEffect, useRef } from "react";
 import StarRating from "@/components/StarRating";
 import AverageRating from "@/components/AverageRating";
 import AllRatings from "./AllRatings";
 
-function pickMeal() {
-  const date = new Date();
-  const hour = date.getHours();
-  const day = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-
-  let adjustedDate = new Date(date);
-
-  // Weekdays (Mon–Fri)
-  if (day >= 1 && day <= 5) {
-    // Special case: Friday after 8 PM -> Saturday Brunch
-    if (day === 5 && hour >= 20) {
-      adjustedDate.setDate(adjustedDate.getDate() + 1);
-      return { meal: "Brunch", date: adjustedDate.toDateString() };
-    }
-
-    if (hour >= 20 || hour < 11) {
-      if (hour >= 20) adjustedDate.setDate(adjustedDate.getDate() + 1);
-      return { meal: "Breakfast", date: adjustedDate.toDateString() };
-    }
-    if (hour < 17) {
-      return { meal: "Lunch", date: adjustedDate.toDateString() };
-    }
-    return { meal: "Dinner", date: adjustedDate.toDateString() };
-  }
-
-  // Weekend (Sat–Sun)
-  if (day === 6) {
-    // Saturday
-    if (hour >= 20) {
-      // After 8 PM Saturday -> Sunday Brunch
-      adjustedDate.setDate(adjustedDate.getDate() + 1);
-      return { meal: "Brunch", date: adjustedDate.toDateString() };
-    }
-    if (hour < 17) {
-      return { meal: "Brunch", date: adjustedDate.toDateString() };
-    }
-    return { meal: "Dinner", date: adjustedDate.toDateString() };
-  }
-
-  if (day === 0) {
-    // Sunday
-    if (hour >= 20) {
-      // After 8 PM Sunday -> Monday Breakfast
-      adjustedDate.setDate(adjustedDate.getDate() + 1);
-      return { meal: "Breakfast", date: adjustedDate.toDateString() };
-    }
-    if (hour < 17) {
-      return { meal: "Brunch", date: adjustedDate.toDateString() };
-    }
-    return { meal: "Dinner", date: adjustedDate.toDateString() };
-  }
+/** Formats the server's 'YYYY-MM-DD' for display without letting the browser's timezone shift it. */
+function formatDate(isoDate) {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(y, m - 1, d).toDateString();
 }
 
-
-
 function DiningHallMenu({ activeTab, setActiveTab }) {
-  const mealInfo = pickMeal();
-  const [meal, setMeal] = useState(() => mealInfo.meal);
-  const [date, setDate] = useState(() => mealInfo.date);
-  const [menuMap, setMenuMap] = useState({ Thorne: {}, Moulton: {} });
-  const [loading, setLoading] = useState(true);
+  // The server decides the day, the meal tabs and which one opens first (GET /api/menus/schedule).
+  const [schedule, setSchedule] = useState(null); // { date, meals, defaultMeal }
+  const [scheduleFailed, setScheduleFailed] = useState(false);
+  const [meal, setMeal] = useState(null);
+  // Arrays (not objects) so rendering with .map still works when the menu request fails.
+  const [menuMap, setMenuMap] = useState({ Thorne: [], Moulton: [] });
+  const [menuLoading, setMenuLoading] = useState(true);
   const [avgMap, setAvgMap] = useState({ Thorne: 0, Moulton: 0 });
   const [votesMap, setVotesMap] = useState({ Thorne: 0, Moulton: 0 });
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const hasFetched = useRef(false);
   const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
+  // Counts ratings requests so a slow, older response can't overwrite a newer one.
+  const ratingsRequestId = useRef(0);
 
   const handleSubmitSuccess = () => {
     fetchRatings();
     setRefreshKey((prev) => prev + 1);
   };
 
+  // Load the schedule once; open on the server's default meal.
   useEffect(() => {
-    async function fetchMenus() {
-      if (hasFetched.current) return; // Prevent multiple fetches
-      hasFetched.current = true;
+    async function fetchSchedule() {
       try {
-        console.log("Fetching meal:", meal);
-        const res = await fetch(`${frontEndUrl}/api/menus/${meal}`);
-        if (!res.ok) throw new Error(`HTTP error! status ${res.status}`);
+        const res = await fetch(`${frontEndUrl}/api/menus/schedule`);
         const data = await res.json();
-        console.log(data)
-        setMenuMap(data); 
+        if (!res.ok) throw new Error(`HTTP error! status ${res.status}`);
+        setSchedule(data);
+        setMeal(data.defaultMeal);
+      } catch (err) {
+        console.error("Error fetching meal schedule:", err.message);
+        setScheduleFailed(true);
+      }
+    }
+    fetchSchedule();
+  }, []);
+
+  // Reload the menu whenever the selected meal tab changes.
+  useEffect(() => {
+    if (!meal) return;
+    // Ignore a response that arrives after the user already switched to another tab.
+    let cancelled = false;
+    async function fetchMenus() {
+      setMenuLoading(true);
+      setMenuMap({ Thorne: [], Moulton: [] });
+      try {
+        const res = await fetch(`${frontEndUrl}/api/menus/${meal}`);
+        // Read the body even on errors: the backend says which hall failed and why (for developers).
+        const data = await res.json();
+        if (data.errors) console.error("Menu errors by hall:", data.errors);
+        if (!res.ok) throw new Error(data.error || `HTTP error! status ${res.status}`);
+        if (!cancelled) setMenuMap(data);
       } catch (err) {
         console.error("Error fetching menus:", err.message);
       } finally {
-        setLoading(false);
+        if (!cancelled) setMenuLoading(false);
       }
     }
     fetchMenus();
+    return () => {
+      cancelled = true;
+    };
   }, [meal]);
 
   useEffect(() => {
@@ -107,21 +84,23 @@ function DiningHallMenu({ activeTab, setActiveTab }) {
     fetchRatings(); // fetch new meal's ratings
   }, [meal, activeTab]);
 
+  // The server rates/reads "today" itself, so no date is sent.
   const fetchRatings = async () => {
     if (!meal || !activeTab) return;
 
+    const requestId = ++ratingsRequestId.current;
     try {
       const token = localStorage.getItem("authToken");
 
-      const currentDate = new Date().toISOString().slice(0, 10);
-
       const res = await fetch(
-        `${frontEndUrl}/api/ratings/${activeTab}/${meal}?date=${currentDate}`,
+        `${frontEndUrl}/api/ratings/${activeTab}/${meal}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
+      // A newer request started while this one was in flight (e.g. the user switched tabs): drop this result.
+      if (requestId !== ratingsRequestId.current) return;
 
     setAvgMap(prev => ({
       ...prev,
@@ -138,17 +117,20 @@ function DiningHallMenu({ activeTab, setActiveTab }) {
     }
   };
 
-  if (loading) {
+  if (scheduleFailed) {
+    return <div className="text-center py-10 text-gray-600">Couldn't load today's meals. Please refresh.</div>;
+  }
+  if (!schedule || !meal) {
     return (
       <div className="text-center py-10 text-gray-600">
         Fetching today's menus...
       </div>
     );
   }
-  
+
   return (
     <div className="text-center bg-white rounded-lg shadow-md p-4 w-full mb-6 relative">
-      
+
       {/* Tabs at top-left inside container */}
       <div className="absolute top-4 left-4 flex rounded-md border border-gray-300 overflow-hidden">
         {["Thorne", "Moulton"].map((tab) => (
@@ -167,20 +149,44 @@ function DiningHallMenu({ activeTab, setActiveTab }) {
       </div>
 
       <h1 className="text-4xl font-bold mb-2 mt-12">{meal}</h1>
-      <p className="mb-6 text-gray-700">{date}</p>
+      <p className="mb-4 text-gray-700">{formatDate(schedule.date)}</p>
+
+      {/* Meal tabs, left to right in the server's order (placeholder styling until the redesign step). */}
+      <div className="inline-flex rounded-md border border-gray-300 overflow-hidden mb-6">
+        {schedule.meals.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setMeal(tab)}
+            className={`px-4 py-2 font-semibold transition-all duration-300 cursor-pointer ${
+              meal === tab
+                ? "bg-[#006D77] text-white"
+                : "bg-white text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
 
       <AverageRating average={avgMap[activeTab]} totalVotes={votesMap[activeTab]} />
 
       {/* Menu grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full max-w-7xl border border-black mx-auto">
-        {menuMap[activeTab].map(({ category, items }) => (
-          <div key={category} className="p-4 text-left flex flex-col">
-            <h2 className="text-xl font-bold mb-2 border-b border-gray-300">{category}</h2>
-            <ul className="list-disc pl-5 space-y-1 text-gray-700">
-              {items.map((item, i) => <li key={i}>{item}</li>)}
-            </ul>
-          </div>
-        ))}
+        {menuLoading ? (
+          <p className="p-6 text-gray-600 col-span-full">Fetching menu...</p>
+        ) : menuMap[activeTab].length === 0 ? (
+          // Shown whether Bowdoin has no menu or the fetch failed (the console says which).
+          <p className="p-6 text-gray-600 col-span-full">No menu found</p>
+        ) : (
+          menuMap[activeTab].map(({ category, items }) => (
+            <div key={category} className="p-4 text-left flex flex-col">
+              <h2 className="text-xl font-bold mb-2 border-b border-gray-300">{category}</h2>
+              <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                {items.map((item, i) => <li key={i}>{item}</li>)}
+              </ul>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Ratings section */}

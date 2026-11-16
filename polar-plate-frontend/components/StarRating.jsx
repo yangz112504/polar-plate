@@ -15,25 +15,29 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
     setRating(0);
     setHover(null);
 
+    // Set when the user switches tab before the response arrives, so a stale rating isn't shown.
+    let cancelled = false;
     const fetchUserRating = async () => {
       try {
-        const currentDate = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
         const token = localStorage.getItem("authToken");
         const res = await fetch(
-          `${frontEndUrl}/api/ratings/user?hall=${activeTab}&meal=${meal}&date=${currentDate}`,
+          `${frontEndUrl}/api/ratings/user?hall=${activeTab}&meal=${meal}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
 
         // Set stars if user already rated this meal
-        setRating(data.userRating || 0);
+        if (!cancelled) setRating(data.userRating || 0);
       } catch (err) {
         console.error("Error fetching user rating:", err.message);
       }
     };
 
     fetchUserRating();
+    return () => {
+      cancelled = true;
+    };
   }, [meal, activeTab]);
 
   const handleSubmit = async () => {
@@ -42,7 +46,6 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
       return;
     }
     try {
-      const currentDate = new Date().toISOString().slice(0, 10);
       const token = localStorage.getItem("authToken");
       const res = await fetch(`${frontEndUrl}/api/ratings`, {
         method: "POST",
@@ -50,7 +53,7 @@ function StarRating({ activeTab, meal, onSubmitSuccess }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ hall: activeTab, meal, rating, date: currentDate }),
+        body: JSON.stringify({ hall: activeTab, meal, rating }),
       });
 
       const data = await res.json();

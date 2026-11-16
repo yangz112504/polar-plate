@@ -10,9 +10,8 @@ function AllRatings({ hall, meal, refreshKey }) {
     const fetchRatings = async () => {
       try {
         const token = localStorage.getItem("authToken");
-        const today = new Date().toISOString().slice(0, 10);
         const res = await fetch(
-          `${frontEndUrl}/api/ratings/${hall}/${meal}/${today}`,
+          `${frontEndUrl}/api/ratings/${hall}/${meal}/all`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
