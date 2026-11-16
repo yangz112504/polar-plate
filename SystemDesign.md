@@ -90,6 +90,7 @@ Newest decisions go at the bottom. Kept untracked on purpose (not committed).
 - **Design:** pure `planMigration` (easy to test) + transactional `migrateUsers` (all-or-nothing) + thin CLI. Idempotent (re-run skips existing), `--dry-run`, counts-only output so no emails/hashes reach the terminal.
 - **Result (2026-11-12):** 120 read, 120 inserted; a re-run inserted 0 and skipped 120.
 - **Gotcha:** old app used database `fansDB`, not Mongo's default `test`.
+- **Cleanup (2026-11-16):** the script, its tests and the `mongoose` dev dependency were deleted once the data was in Postgres and Mongo was no longer used. The code is still in git history (`d53ef82`) if it's ever needed.
 
 ## 18. Moving routes onto Postgres: `createApp({ db, secretKey })` + supertest (done)
 - **Problem:** `server.js` creates the app and starts listening in one file, so tests can't call it without a real server and the real Mongo.
@@ -108,7 +109,7 @@ Newest decisions go at the bottom. Kept untracked on purpose (not committed).
 - `routes/*` parse input (zod) and shape responses; `auth/authService.ts` owns bcrypt + JWT; repositories own SQL. Only `app.ts` wires them together, and only `server.ts` reads env and starts listening.
 - **Why:** each layer can be tested or swapped alone (for example Supabase Auth later touches `authService` only).
 - **Errors:** domain errors (`UserAlreadyExistsError`, `LoginError`, `InvalidScoreError`) become 4xx in routes; anything unexpected reaches one app-wide handler that logs the details and returns a generic 500 (never leak internals).
-- **Old `server.js` retired.** Mongoose stays only as a dev dependency for the one-time migration script; remove it with the script once you no longer need it.
+- **Old `server.js` retired.** Mongoose was kept only for the one-time migration script and was removed together with it on 2026-11-16 (see #17).
 
 ## 21. Menu source: Bowdoin's JSON endpoint instead of scraping (Step 1a, chosen: design 2)
 - **How we found it (2026-11-12):** the dashboard showed "HTTP 500" for menus. The old Playwright scraper waits for the elements `#u48` / `#u49`, but the live page now builds `#uthorne` / `#umoulton`, so it times out. Reading the page's own script (`/_files/js/dining-menu.js`) showed that Bowdoin's page does not scrape anything: it calls `https://dining-menu.bowdoin.edu/menu/<YYYY-MM-DD>/<thorne|moulton>/<meal>`, which returns JSON `[{course, course_sort, items:[{item, sort_order, ...}]}]`. One test request confirmed it works.

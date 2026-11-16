@@ -11,13 +11,19 @@
   (`https://dining-menu.bowdoin.edu/menu/<date>/<thorne|moulton>/<meal>`), not Playwright (removed).
   Cache-aside in `meals.items` + single-flight; a hall failure doesn't hide the other hall (partial results);
   frontend shows "No menu found". The old Playwright scraper had broken because the page's element ids changed.
-- **Tests:** `cd backend && docker compose -f docker-compose.test.yml up -d && npm test` (200 passing at last run),
+- **Tests:** `cd backend && docker compose -f docker-compose.test.yml up -d && npm test` (186 passing at last run; 14 fewer than before because the Mongo migration tests were removed),
   `npm run typecheck`. Frontend has no tests yet.
 - **Decision log:** `SystemDesign.md` entries #1-#25 (untracked, personal). Update it whenever a design decision is made.
 
 **Not yet done / owner to-dos:**
-- Not pushed; no PR yet. `Plan.md`, `SystemDesign.md`, `run-all-tests.sh` are intentionally untracked (the last was not written by Claude).
-- Owner should rotate the Supabase DB password (it was pasted into a chat) and update `DATABASE_URL` in `backend/.env`.
+- Branch `step0-foundations` is pushed to GitHub (public repo); no PR yet. `Plan.md`, `SystemDesign.md` and
+  `run-all-tests.sh` are tracked and public (owner's choice; they contain no secrets).
+- ✅ Supabase DB password rotated and `DATABASE_URL` updated in `backend/.env` (owner, 2026-11-16).
+- **Still open:** the old `SECRET_KEY` and `MONGO_URI` from the Aug 2025 `backend/.env` are in public git
+  history on `main`. Retire the Mongo database user/cluster, and make sure `SECRET_KEY` in `backend/.env` is a
+  new value. Deleting the `MONGO_URI` line from `backend/.env` is also on the owner (Mongo is no longer used).
+- Mongo removed from the project (2026-11-16): the one-time migration script, its tests and the `mongoose`
+  dev dependency are deleted. The migration already ran (120 users); see `SystemDesign.md` #17.
 
 **Step 2 (meal tabs): done, reviewed and committed** (`6a71e32` feature, `0ddca3b` review fixes).
 - `GET /api/menus/schedule` -> `{date, meals, defaultMeal}` from the pure `getSchedule(now)` (weekday
@@ -25,7 +31,7 @@
   row of meal tabs under the Thorne/Moulton tabs. Decisions in `SystemDesign.md` #24-#25.
 - Ratings use the server's day (client `date` removed); POST only accepts meals served that day;
   all-ratings route is now `/api/ratings/:hall/:meal/all`.
-- Verified: backend 200 tests passing, typecheck, frontend lint + build, and a manual browser check by the owner.
+- Verified (at the time of Step 2): backend 200 tests passing, typecheck, frontend lint + build, and a manual browser check by the owner.
 - **Open from the code review:** a page left open past midnight ET keeps yesterday's tabs (refetch the schedule
   on window focus would fix it); the known B1 trade-off (rating just after midnight lands on the next day).
 - **Design note for Step 4:** put the hall name before the meal name in the main header above the menu

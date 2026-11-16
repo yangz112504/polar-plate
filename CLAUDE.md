@@ -13,8 +13,8 @@ themselves system design and how to work well with agentic AI. Understanding mat
 - `polar-plate-frontend/` — Next.js 15 (App Router) + React 19, Tailwind, MUI, react-hook-form + zod.
   Pages in `app/`, shared UI in `components/`.
 - Currently plain JavaScript; the plan is to migrate to **TypeScript**. Write new code in TypeScript.
-- Database/caching are open decisions (Mongo may become Supabase; Redis cache is possible). Don't
-  hard-wire assumptions about them; isolate data access so a swap stays cheap.
+- The database is Postgres on Supabase (Mongo is gone). Caching is an open decision (a Redis cache is
+  possible). Don't hard-wire assumptions about either; isolate data access so a swap stays cheap.
 
 ## How
 - Backend: `cd backend && npm run dev` (needs `.env` with `DATABASE_URL`, `SECRET_KEY`); tests: start Postgres with
