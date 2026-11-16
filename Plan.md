@@ -2,7 +2,7 @@
 
 > Read `CLAUDE.md` first: plan together, tests first (TDD), get the owner's agreement before implementing.
 
-## Status (as of 2026-11-13)
+## Status (as of 2026-11-16)
 **Done and committed on branch `step0-foundations`** (commits `d53ef82` backend, `c555d47` frontend, then Step 2: `6a71e32`, `0ddca3b`):
 - **Step 0 (foundations):** TypeScript + Vitest + Drizzle on Supabase Postgres (RLS on), repositories,
   `dayKey()`, auth service, zod-validated routes via `createApp()`, `server.js` retired. 120 Mongo users
@@ -13,7 +13,7 @@
   frontend shows "No menu found". The old Playwright scraper had broken because the page's element ids changed.
 - **Tests:** `cd backend && docker compose -f docker-compose.test.yml up -d && npm test` (200 passing at last run),
   `npm run typecheck`. Frontend has no tests yet.
-- **Decision log:** `SystemDesign.md` entries #1-#23 (untracked, personal). Update it whenever a design decision is made.
+- **Decision log:** `SystemDesign.md` entries #1-#25 (untracked, personal). Update it whenever a design decision is made.
 
 **Not yet done / owner to-dos:**
 - Not pushed; no PR yet. `Plan.md`, `SystemDesign.md`, `run-all-tests.sh` are intentionally untracked (the last was not written by Claude).
