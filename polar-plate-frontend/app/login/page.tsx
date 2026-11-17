@@ -13,20 +13,25 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
+type LoginForm = z.infer<typeof loginSchema>;
+
+/** Login form. Accepts a username or an email, stores the returned JWT and goes to the dashboard. */
 function LoginPage() {
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors }, setError, clearErrors } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
 
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  // Server/network errors are not tied to one field, so they live outside react-hook-form.
+  const [generalError, setGeneralError] = useState('');
   const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: LoginForm) => {
     setLoading(true);
     setSuccessMessage('');
-    clearErrors('general');
+    setGeneralError('');
 
     try {
       // Determine if the identifier is an email or username based on format
@@ -44,19 +49,19 @@ function LoginPage() {
         body: JSON.stringify(requestBody),
       });
 
-      const responseData = await response.json();
+      const responseData: { message?: string; token?: string } = await response.json();
 
       if (response.ok) {
         setSuccessMessage(responseData.message || 'Login successful!');
-        localStorage.setItem('authToken', responseData.token); // save JWT
+        localStorage.setItem('authToken', responseData.token ?? ''); // save JWT
 
         router.push('/dashboard'); 
       } else {
-        setError('general', { type: 'server', message: responseData.message || 'Login failed. Invalid credentials.' });
+        setGeneralError(responseData.message || 'Login failed. Invalid credentials.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('general', { type: 'network', message: 'Network error or server unavailable. Please try again later.' });
+      setGeneralError('Network error or server unavailable. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -83,9 +88,9 @@ function LoginPage() {
           Login to continue rating meals.
         </p>
 
-        {errors.general && (
+        {generalError && (
           <p className="text-red-700 text-sm text-center mb-4 p-2 bg-red-100 border border-red-200 rounded-md">
-            {errors.general.message}
+            {generalError}
           </p>
         )}
         {successMessage && (
@@ -156,7 +161,7 @@ function LoginPage() {
         </form>
 
         <p className="text-center text-sm text-ink-soft mt-6">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/register" className="text-brick underline-offset-2 hover:underline font-medium">
             Register here
           </Link>

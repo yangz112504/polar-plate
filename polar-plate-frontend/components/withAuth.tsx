@@ -1,11 +1,18 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
-export default function withAuth(WrappedComponent) {
-  return function ProtectedRoute(props) {
+/**
+ * Wraps a page so it only renders for a logged-in user. Reads the JWT from localStorage; a missing,
+ * malformed or expired token is removed and the user is sent to /login. Shows a short message
+ * while the check runs.
+ * @param WrappedComponent The page to protect.
+ * @returns A component that renders `WrappedComponent` once the token is accepted.
+ */
+export default function withAuth<P extends object>(WrappedComponent: ComponentType<P>) {
+  return function ProtectedRoute(props: P) {
     const router = useRouter();
     const [authorized, setAuthorized] = useState(false);
 

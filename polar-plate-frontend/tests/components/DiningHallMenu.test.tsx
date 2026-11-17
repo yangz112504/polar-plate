@@ -189,4 +189,43 @@ describe("when something fails or the names are unusual", () => {
       expect(urls.some((u) => u.includes("/api/ratings/user?hall=Thorne&meal=Late%20Night"))).toBe(true);
     });
   });
+
+  it("shows 'No menu found' instead of crashing when a hall's menu is malformed", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const base = mockApi();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.endsWith("/api/menus/Breakfast")
+          ? { ok: true, status: 200, json: async () => ({ Thorne: "oops", Moulton: [] }) }
+          : base(url),
+      ),
+    );
+    render(<DiningHallMenu />);
+    expect(await within(await screen.findByRole("region", { name: "Menu sections" })).findByText("No menu found")).toBeInTheDocument();
+  });
+
+  it("shows both sections when two stations share a name, without React key warnings", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const base = mockApi();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.endsWith("/api/menus/Breakfast")
+          ? {
+              ok: true,
+              status: 200,
+              json: async () => ({
+                Thorne: [{ category: "Grill", items: ["Pancakes"] }, { category: "Grill", items: ["Bacon"] }],
+                Moulton: [],
+              }),
+            }
+          : base(url),
+      ),
+    );
+    render(<DiningHallMenu />);
+    const region = await screen.findByRole("region", { name: "Menu sections" });
+    expect(await within(region).findAllByRole("heading", { name: "Grill" })).toHaveLength(2);
+    expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("same key"))).toBe(false);
+  });
 });

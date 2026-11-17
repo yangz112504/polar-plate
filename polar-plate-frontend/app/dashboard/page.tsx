@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from "next/navigation";
-import withAuth from "../../components/withAuth";
+import withAuth from "@/components/withAuth";
 import DiningHallMenu from "@/components/DiningHallMenu";
 
 /** The signed-in home: the menu view, with a logout button in the brick header. */

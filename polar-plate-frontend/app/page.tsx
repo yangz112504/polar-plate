@@ -7,6 +7,7 @@ import Image from 'next/image';
 import BrickPattern from '@/components/BrickPattern';
 import PolarBearMark from '@/components/PolarBearMark';
 
+/** Landing page. A visitor who is already logged in is sent straight to the dashboard. */
 function Home() {
   const router = useRouter();
 

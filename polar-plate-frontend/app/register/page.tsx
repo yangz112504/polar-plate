@@ -25,20 +25,25 @@ const registerSchema = z.object({
   path: ['confirmPassword'], 
 });
 
+type RegisterForm = z.infer<typeof registerSchema>;
+
+/** Registration form. On success shows a message and sends the user to /login after a second. */
 function RegisterPage() {
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors }, setError, clearErrors } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
 
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  // Server/network errors are not tied to one field, so they live outside react-hook-form.
+  const [generalError, setGeneralError] = useState('');
   const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: RegisterForm) => {
     setLoading(true);
     setSuccessMessage('');
-    clearErrors('general'); 
+    setGeneralError('');
 
     try {
       const response = await fetch(`${frontEndUrl}/api/users`, {
@@ -53,7 +58,7 @@ function RegisterPage() {
         }),
       });
 
-      const responseData = await response.json();
+      const responseData: { message?: string } = await response.json();
 
       if (response.ok) {
         setSuccessMessage(responseData.message || 'Registration successful! You can now login.');
@@ -62,11 +67,11 @@ function RegisterPage() {
         }, 1000);
       } else {
         // Handle backend validation errors or general error messages
-        setError('general', { type: 'server', message: responseData.message || 'Registration failed.' });
+        setGeneralError(responseData.message || 'Registration failed.');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      setError('general', { type: 'network', message: 'Network error or server unavailable. Please try again later.' });
+      setGeneralError('Network error or server unavailable. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -93,9 +98,9 @@ function RegisterPage() {
         </p>
 
         {/* Display general form errors or success message */}
-        {errors.general && (
+        {generalError && (
           <p className="text-red-700 text-sm text-center mb-4 p-2 bg-red-100 border border-red-200 rounded-md">
-            {errors.general.message}
+            {generalError}
           </p>
         )}
         {successMessage && (

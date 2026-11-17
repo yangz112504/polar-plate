@@ -6,19 +6,14 @@ import PolarBearMark from "@/components/PolarBearMark";
 import SegmentedTabs from "@/components/SegmentedTabs";
 import StarRating from "@/components/StarRating";
 import { formatLongDate, headerTitle } from "@/lib/menuHeader";
+import { parseMenu, type MenuMap } from "@/lib/parseMenu";
 import { useSchedule } from "@/lib/useSchedule";
 
 const HALLS = ["Thorne", "Moulton"];
 /** How long after the last scroll event the section outlines stay visible. */
 const SCROLL_QUIET_MS = 1000;
 
-interface MenuCategory {
-  category: string;
-  items: string[];
-}
-/** Menu for one meal, keyed by hall name (GET /api/menus/:meal). */
-type MenuMap = Record<string, MenuCategory[]>;
-const EMPTY_MENU: MenuMap = { Thorne: [], Moulton: [] };
+const EMPTY_MENU: MenuMap = parseMenu(null, HALLS);
 
 interface DiningHallMenuProps {
   /** Optional content for the right side of the brick header (e.g. the logout button). */
@@ -71,7 +66,7 @@ function DiningHallMenu({ headerRight }: DiningHallMenuProps) {
         const data = await res.json();
         if (data.errors) console.error("Menu errors by hall:", data.errors);
         if (!res.ok) throw new Error(data.error || `HTTP error! status ${res.status}`);
-        if (!cancelled) setMenuMap(data);
+        if (!cancelled) setMenuMap(parseMenu(data, HALLS));
       } catch (err) {
         console.error("Error fetching menus:", err instanceof Error ? err.message : err);
       } finally {
@@ -137,7 +132,7 @@ function DiningHallMenu({ headerRight }: DiningHallMenuProps) {
     return <div className="py-10 text-center text-ink-soft">Fetching today&apos;s menus...</div>;
   }
 
-  const sections = menuMap[hall] ?? [];
+  const sections = menuMap[hall];
 
   return (
     // h-dvh = the visible phone height (excludes the browser bars). On a very short window the
@@ -197,8 +192,9 @@ function DiningHallMenu({ headerRight }: DiningHallMenuProps) {
             // Shown whether Bowdoin has no menu or the fetch failed (the console says which).
             <p className="col-span-full py-6 text-center text-ink-soft">No menu found</p>
           ) : (
-            sections.map(({ category, items }) => (
-              <section key={category} className="menu-section rounded-xl px-2 py-2.5 lg:rounded-[14px] lg:px-4 lg:py-3.5">
+            sections.map(({ category, items }, index) => (
+              // The index is part of the key because two stations can share a name.
+              <section key={`${category}-${index}`} className="menu-section rounded-xl px-2 py-2.5 lg:rounded-[14px] lg:px-4 lg:py-3.5">
                 <h2 className="mb-1.5 border-b-2 border-ink pb-1 text-xl font-semibold lg:mb-2 lg:pb-[5px] lg:text-[22px]">
                   {category}
                 </h2>
