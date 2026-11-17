@@ -180,6 +180,18 @@ Newest decisions go at the bottom. Kept untracked on purpose (not committed).
 - **Kept:** `getMealStats` stays because the GET stats route and the future stats page (Step 7) use it. The older `upsertRating` and `getOrCreateMeal` became unused and were deleted.
 - **Where the time really goes:** locally each round trip crosses the internet to Supabase; deployed in the same region as the database a trip costs a few ms. Optimistic UI was rejected (could show success for a failed save).
 
+## 28. Frontend look: "Hubbard" brick theme, Tailwind tokens only (Step 4, chosen)
+- **Problem:** the UI was plain: teal on a light-blue gradient (not Bowdoin), hall tabs positioned over the title, Bowdoin colors defined only inside the dark-mode media query.
+- **How we chose:** instead of describing options in words, 8 phone mockups were built on a Claude Design canvas (not in the repo) and compared; the owner picked #1 "Hubbard" and asked for desktop too. Mockups are throwaway HTML, so the real build must be matched to them by hand (the cost of this approach).
+- **Chosen look:** brick red `#9B2822` (Bowdoin's own color; first-year housing is "the Bricks", old halls like Moulton are red brick) over cream `#F6F0E4`; near-black `#231F20` text. The header has a running-bond brick pattern drawn in pure CSS (no image) and a small polar-bear SVG mark. Everything else stays plain.
+- **Fonts:** Fraunces (headings) + Public Sans (everything you read), exactly as in the canvas boards. (An earlier build used Cormorant + IBM Plex from a misremembered note; the owner saw it did not match the mockups, so the build was redone from the canvas files themselves.)
+- **Layout:** the title, hall/meal tabs, average stars and "Your rating" stay put; only the menu sections scroll (flex column with `min-height: 0` on the scroll region, not absolute positioning, which would cover the last items). Section outlines appear only while scrolling (a quiet period of ~900 ms after the last scroll event).
+- **Skill review:** the `frontend-design` skill lists cream + serif + warm accent as a common generated look; kept on purpose because the brief (Bowdoin brick) pins the accent. Its other advice is applied: no tracked all-caps eyebrow above the title (the date is plain sentence case), no emoji, no gradient washes, visible keyboard focus, reduced motion respected.
+- **Styling approach:** colors, fonts, radii go in the Tailwind `@theme` block in `globals.css` (one styling system); the unused hero CSS and `home.module.css` are deleted.
+- **Tabs:** two accessible tab rows (hall, then meal), one Tab stop each, arrow keys move; the header reads "<Hall> <Meal>" (e.g. "Thorne Breakfast").
+- **Built (2026-11-17), then redone to match the canvas:** the real `.dc.html` files were read and copied (brick header with hall tabs shaped like folder tabs, pill meal tabs, title + stars under them, tan "Your rating" panel; from 1024px a left column beside a two-column scrolling menu). the outline quiet period is 1000 ms; `useSchedule` re-asks the server when the tab regains focus so a page left open overnight moves to the new day; the "Welcome, name" greeting was dropped.
+- **Trade-offs:** fixed top and bottom bars use ~560 px of a 667 px-tall small phone, so the menu area is small there (to be checked at 375x667 and tightened if needed).
+
 ## Planned / open
 - Auth gaps (stale username in JWT, password change doesn't revoke tokens): Step 5 (`tokenVersion` or Supabase Auth).
 - Favorites: `ratings.is_favorite` vs a `favorites` table, decided in Step 6.

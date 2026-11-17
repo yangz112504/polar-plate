@@ -42,16 +42,16 @@ passing, both typechecks, frontend lint and build clean. Frontend: `cd polar-pla
   the owner outside this plan.)
 - Open a PR for `step0-foundations` when ready.
 
-**Next action: Step 4 (design system + dashboard redesign, mobile-first).** Per `CLAUDE.md`: start in plan mode,
-present 2-3 designs with trade-offs, owner decides, then tests first where logic is involved. Notes for it:
-- Design for a ~375px phone first (iPhone SE), then widen. The owner will mostly use it on a phone.
-- Put the hall name before the meal name in the main header above the menu (e.g. "Thorne Breakfast");
-  decide how the two tab rows (hall, meal) look.
-- Bowdoin theme, more readable, less plain, not generic. Known CSS issue: the Bowdoin color variables in
-  `globals.css` are only defined inside the dark-mode media query.
-- Keep the half-star hint ("Click once for a full star, double-click for a half star.") and the 400 ms window
-  in mind when restyling `StarRating`; its tests (`tests/components/StarRating.test.tsx`) rely on the
-  `aria-label="Rate N stars"` buttons and the `star-full|half|empty` test ids.
+**Step 4 (design system + dashboard redesign): implemented 2026-11-17, not yet committed; awaiting the owner's look on a
+real phone.** "Hubbard" look (`SystemDesign.md` #28), rebuilt from the canvas files after the first pass did not match: brick `#9B2822` on cream `#F6F0E4`, Fraunces + Public Sans, tokens in the Tailwind `@theme` block of `globals.css` (the old dark-mode-only Bowdoin variables, hero CSS and
+`home.module.css` are gone). New: `lib/menuHeader.ts`, `lib/useSchedule.ts` (refetches on tab focus, resets to the new
+day's default meal), `components/SegmentedTabs.tsx`, `PolarBearMark.tsx`. `DiningHallMenu`, `AverageRating`, `AllRatings`
+are now TypeScript; `DiningHallMenu` owns the hall state; header/tabs/average/"Your rating" stay fixed and only the menu
+sections scroll (outlines show while scrolling). `StarRating`, landing, login, register, dashboard restyled.
+Checked by: `npm test` (51 passing), `typecheck`, `lint`, `build` all clean. NOT checked: how it looks in a browser,
+especially at 375x667 (the fixed bars use a lot of a small phone's height). The dashboard's "Welcome, <name>" greeting
+and its `/api/users/me` call were dropped in the redesign (no room in the header); re-add if wanted.
+Comments (Step 9) are NOT part of Step 4. Unrelated leftover (DON'T FIX here): backend unused deps.
 
 ---
 
@@ -128,13 +128,26 @@ Defaults chosen but **not yet confirmed** with the owner (confirm when Step 0 st
 | 1 | ✅ **Daily menu pipeline**: fix the scraper, fill `meals`, get-or-scrape service + single-flight lock | Fixes the cost problem; meals get real items |
 | 2 | ✅ **Meal tabs + default tab by time**; weekend Brunch/Dinner; ratings use the server day + upsert | First thing that uses stored menus; correct rating data |
 | 3 | ✅ **Half-star ratings** (0.5–5.0, step 0.5; validated by the server and the DB) | Finishes the core rating experience |
-| 4 | **Design system + dashboard redesign, mobile-first** (design for a 375px phone first, then widen; Bowdoin tokens, typography, buttons; use the `frontend-design` plugin) | Comes before new pages, so they're built in the new style |
+| 4 | ✅ (pending visual check) **Design system + dashboard redesign, mobile-first** (design for a 375px phone first, then widen; Bowdoin tokens, typography, buttons; use the `frontend-design` plugin) | Comes before new pages, so they're built in the new style |
 | 5 | **Profile basics**: username, password change, bio, avatar; auth fixes (#7) | Gives history, favorites and friends a home |
 | 6 | **Rating history → favorites → pin to profile** | Ratings ⋈ meals; first "my data" view |
 | 7 | **Stats page**: today's B/L/D side by side; best and worst meals of the week | Aggregations that grow out of history |
 | 8 | **Streaks** | Distinct rating days per user via `dayKey` |
-| 9 | **Comments per meal** | Attach to the meal identity; moderation and rate limits |
+| 9 | **Comments per meal**: each comment shows the user, their profile picture (avatar, from Step 5), the text and when it was posted | Attach to the meal identity; moderation and rate limits. Needs Step 5's avatars first; Step 4 only keeps room for it in the layout |
 | 10 | **Friends** (requests, privacy) | Most complex; builds on everything above |
+
+## Later idea (not scheduled): installable web app (PWA)
+The owner wants Polar Plate to stay a website but be "add to home screen"-able, so it opens from a phone icon
+like an app (Clash Royale's store works this way). This is a **Progressive Web App (PWA)**, not a native app:
+no app store, no separate codebase. Rough shape, to plan properly when we get to it (2–3 options + trade-offs first):
+- A **web app manifest** (Next.js 15 supports `app/manifest.ts`): name, `start_url` (`/dashboard`), `display: "standalone"`
+  (hides the browser bar), `theme_color` brick `#9B2822`, `background_color` cream `#F6F0E4`, 192px and 512px icons
+  (the polar-bear mark would work).
+- iOS extras: an `apple-touch-icon` and the `apple-mobile-web-app-*` meta tags (iOS reads those, not just the manifest).
+- Needs HTTPS (any normal host gives that). A **service worker** is optional: it adds offline support and push
+  notifications (iOS allows push only for installed web apps) and makes the Android install prompt more reliable.
+- Check first: the JWT in `localStorage` still works in standalone mode, and the layout (already `h-dvh`) fits with no browser bar.
+- Fits best after Step 5 (profile) or whenever the owner wants a polish pass; it touches no backend.
 
 Each step: its own plan (2–3 designs with pros, cons and a recommendation) → tests first → the owner
 agrees → implement → `/code-review` (+ `/security-review` for auth, comments and uploads).

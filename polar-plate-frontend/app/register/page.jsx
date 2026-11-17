@@ -73,14 +73,9 @@ function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 md:p-8
-                     bg-gradient-to-br from-[#addae2] to-[#dceeff]
-                     text-[var(--bowdoin-black)]">
+    <main className="relative flex min-h-dvh items-center justify-center bg-cream p-4 pt-20 md:p-8 text-ink">
         
-      <Link href="/" className="absolute top-4 left-4 inline-flex items-center
-                                 bg-white text-[#006D77] px-4 py-2 rounded-lg font-semibold shadow-sm
-                                 border border-gray-200 hover:bg-gray-50 transition-colors duration-200
-                                 z-50"> {/* Add z-50 to ensure it's on top */}
+      <Link href="/" className="absolute left-4 top-4 z-50 inline-flex items-center rounded-md border border-line bg-cream-light px-4 py-2 font-medium text-brick transition-colors hover:bg-brick/10 focus-visible:outline-2 focus-visible:outline-brick"> {/* Add z-50 to ensure it's on top */}
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
@@ -88,24 +83,23 @@ function RegisterPage() {
       </Link>
 
       {/* Inner container */}
-      <div className="bg-white p-8 md:p-10 rounded-xl shadow-xl w-full max-w-md
-                      border border-[rgba(0,0,0,0.1)] backdrop-filter backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-lg border border-line bg-cream-light p-6 md:p-10">
 
-        <h1 className="text-3xl font-extrabold text-center mb-6 text-[var(--bowdoin-black)]">
+        <h1 className="mb-3 text-center text-4xl font-semibold text-brick">
           Join The Polar Plate
         </h1>
-        <p className="text-gray-700 text-center mb-6 text-lg">
+        <p className="text-ink-soft text-center mb-6">
           Create your account to start rating meals!
         </p>
 
         {/* Display general form errors or success message */}
         {errors.general && (
-          <p className="text-red-500 text-sm text-center mb-4 p-2 bg-red-100 border border-red-200 rounded-md">
+          <p className="text-red-700 text-sm text-center mb-4 p-2 bg-red-100 border border-red-200 rounded-md">
             {errors.general.message}
           </p>
         )}
         {successMessage && (
-          <p className="text-green-600 text-sm text-center mb-4 p-2 bg-green-100 border border-green-200 rounded-md">
+          <p className="text-green-800 text-sm text-center mb-4 p-2 bg-green-100 border border-green-200 rounded-md">
             {successMessage}
           </p>
         )}
@@ -113,7 +107,7 @@ function RegisterPage() {
         {/* handleSubmit takes care of validation before onSubmit */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <label htmlFor="username" className="block text-gray-700 text-sm font-semibold mb-2">
+            <label htmlFor="username" className="block text-ink text-sm font-medium mb-2">
               Username:
             </label>
             <input
@@ -121,20 +115,20 @@ function RegisterPage() {
               id="username"
               placeholder="e.g., foodie_bear (3-30 char)"
               {...register('username')} 
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006D77] focus:border-transparent transition-all duration-200
-                          ${errors.username ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brick focus:border-transparent transition-all duration-200
+                          ${errors.username ? 'border-red-500' : 'border-line'}`}
               aria-invalid={errors.username ? "true" : "false"}
               aria-describedby="username-error"
             />
             {errors.username && (
-              <p id="username-error" className="text-red-500 text-xs mt-1">
+              <p id="username-error" className="text-red-700 text-xs mt-1">
                 {errors.username.message}
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-gray-700 text-sm font-semibold mb-2">
+            <label htmlFor="email" className="block text-ink text-sm font-medium mb-2">
               Email:
             </label>
             <input
@@ -142,13 +136,13 @@ function RegisterPage() {
               id="email"
               placeholder="example@domain.com"
               {...register('email')} 
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006D77] focus:border-transparent transition-all duration-200
-                          ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brick focus:border-transparent transition-all duration-200
+                          ${errors.email ? 'border-red-500' : 'border-line'}`}
               aria-invalid={errors.email ? "true" : "false"}
               aria-describedby="email-error"
             />
             {errors.email && (
-              <p id="email-error" className="text-red-500 text-xs mt-1">
+              <p id="email-error" className="text-red-700 text-xs mt-1">
                 {errors.email.message}
               </p>
             )}
@@ -158,12 +152,12 @@ function RegisterPage() {
             <div className="flex items-center justify-between mb-2">
               <label 
                 htmlFor="password" 
-                className="text-gray-700 text-sm font-semibold"
+                className="text-ink text-sm font-medium"
               >
                 Password:
               </label>
               <Tooltip title="Password is securely hashed with bcrypt" placement='left'>
-                <InfoOutlineIcon fontSize="small" className="text-gray-500 cursor-pointer" />
+                <InfoOutlineIcon fontSize="small" className="text-ink-soft cursor-pointer" />
               </Tooltip>
             </div>
             <input
@@ -171,20 +165,20 @@ function RegisterPage() {
               id="password"
               placeholder="Minimum 6 characters"
               {...register('password')}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006D77] focus:border-transparent transition-all duration-200
-                          ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brick focus:border-transparent transition-all duration-200
+                          ${errors.password ? 'border-red-500' : 'border-line'}`}
               aria-invalid={errors.password ? "true" : "false"}
               aria-describedby="password-error"
             />
             {errors.password && (
-              <p id="password-error" className="text-red-500 text-xs mt-1">
+              <p id="password-error" className="text-red-700 text-xs mt-1">
                 {errors.password.message}
               </p>
             )}
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-semibold mb-2">
+            <label htmlFor="confirmPassword" className="block text-ink text-sm font-medium mb-2">
               Confirm Password:
             </label>
             <input
@@ -192,13 +186,13 @@ function RegisterPage() {
               id="confirmPassword"
               placeholder="Re-enter your password"
               {...register('confirmPassword')} 
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006D77] focus:border-transparent transition-all duration-200
-                          ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brick focus:border-transparent transition-all duration-200
+                          ${errors.confirmPassword ? 'border-red-500' : 'border-line'}`}
               aria-invalid={errors.confirmPassword ? "true" : "false"}
               aria-describedby="confirm-password-error"
             />
             {errors.confirmPassword && (
-              <p id="confirm-password-error" className="text-red-500 text-xs mt-1">
+              <p id="confirm-password-error" className="text-red-700 text-xs mt-1">
                 {errors.confirmPassword.message}
               </p>
             )}
@@ -206,8 +200,8 @@ function RegisterPage() {
 
           <button
             type="submit"
-            className="w-full bg-[#006D77] text-white py-3 px-4 rounded-lg font-semibold
-                       hover:bg-[#005A63] transition-colors duration-300 ease-in-out
+            className="w-full bg-brick text-cream py-3 px-4 rounded-md font-medium
+                       hover:bg-brick-dark disabled:opacity-60 transition-colors duration-300 ease-in-out
                        flex items-center justify-center cursor-pointer"
             disabled={loading}
           >
@@ -222,9 +216,9 @@ function RegisterPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-sm text-ink-soft mt-6">
           Already have an account?{' '}
-          <Link href="/login" className="text-[#006D77] hover:underline font-medium">
+          <Link href="/login" className="text-brick underline-offset-2 hover:underline font-medium">
             Login here
           </Link>
         </p>

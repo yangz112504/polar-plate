@@ -36,7 +36,7 @@ function StarRating({ activeTab, meal, onSubmitSuccess }: StarRatingProps) {
     const fetchUserRating = async () => {
       try {
         const token = localStorage.getItem("authToken");
-        const res = await fetch(`${frontEndUrl}/api/ratings/user?hall=${activeTab}&meal=${meal}`, {
+        const res = await fetch(`${frontEndUrl}/api/ratings/user?hall=${encodeURIComponent(activeTab)}&meal=${encodeURIComponent(meal)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -90,11 +90,18 @@ function StarRating({ activeTab, meal, onSubmitSuccess }: StarRatingProps) {
   const shown = hover ?? rating;
 
   return (
-    <div className="flex flex-col items-center justify-center mt-6">
-      {/* Label + Stars. Stacks on narrow phones (the one-line row was ~410px wide, wider than an iPhone SE), sits in one row from 640px up. */}
-      <div className="flex flex-col items-center gap-1 mb-2 sm:flex-row sm:gap-4">
-        <span className="text-lg font-medium text-gray-700">Your Rating:</span>
+    <div className="flex flex-col gap-1.5 lg:gap-2">
+      <div className="flex items-center justify-between">
+        <span className="font-heading text-lg font-semibold lg:text-xl">Your rating</span>
+        {/* Star + numeric value, like the old design */}
+        <span className="flex items-center gap-1.5">
+          <StarFraction fraction={1} size={20} className="h-5 w-5" />
+          <span className="text-base font-semibold">{formatScore(rating)}</span>
+        </span>
+      </div>
 
+      {/* Phone: stars and Submit share a row to save height. Desktop: Submit goes under the stars. */}
+      <div className="flex items-center gap-2 lg:flex-col lg:items-stretch lg:gap-2.5">
         <div className="flex">
           {[1, 2, 3, 4, 5].map((star) => {
             const fill = Math.max(0, Math.min(1, shown - (star - 1)));
@@ -106,32 +113,31 @@ function StarRating({ activeTab, meal, onSubmitSuccess }: StarRatingProps) {
                 key={star}
                 type="button"
                 aria-label={`Rate ${star} stars`}
-                className="cursor-pointer p-1 touch-manipulation select-none"
+                className="flex h-11 w-11 cursor-pointer touch-manipulation items-center justify-center select-none
+                           rounded focus-visible:outline-2 focus-visible:outline-brick lg:h-12 lg:w-12"
                 onClick={() => handlePress(star)}
                 onMouseEnter={() => setHover(star)}
                 onMouseLeave={() => setHover(null)}
               >
                 <span data-testid={`star-${kind}`} className="block">
-                  <StarFraction fraction={fill} size={32} />
+                  <StarFraction fraction={fill} size={36} outlined className="h-9 w-9 lg:h-10 lg:w-10" />
                 </span>
               </button>
             );
           })}
         </div>
 
-        {/* Numeric value */}
-        <div className="text-lg text-gray-800 whitespace-nowrap">{formatScore(rating)}</div>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="min-h-11 min-w-0 flex-1 cursor-pointer rounded-[10px] bg-brick px-3 font-semibold text-cream transition-colors
+                     hover:bg-brick-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brick lg:min-h-12 lg:flex-none"
+        >
+          Submit Rating
+        </button>
       </div>
 
-      <p className="text-sm text-gray-500 mb-4 text-center px-2">Click once for a full star, double-click for a half star.</p>
-
-      {/* Submit button */}
-      <button
-        onClick={handleSubmit}
-        className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md cursor-pointer"
-      >
-        Submit Rating
-      </button>
+      <p className="text-xs text-ink-soft lg:text-[13px]">Click once for a full star, double-click for a half star.</p>
     </div>
   );
 }

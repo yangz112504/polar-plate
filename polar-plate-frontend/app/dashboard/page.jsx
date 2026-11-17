@@ -1,82 +1,34 @@
 'use client';
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import withAuth from "../../components/withAuth";
 import DiningHallMenu from "@/components/DiningHallMenu";
 
+/** The signed-in home: the menu view, with a logout button in the brick header. */
 function DashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("Thorne");
-  const [username, setUsername] = useState(""); 
-  const frontEndUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) return;
-
-        const res = await fetch(`${frontEndUrl}/api/users/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          setUsername(data.user.username);
-        } else {
-          console.error(data.message);
-        }
-      } catch (err) {
-        console.error("Error fetching user:", err);
-      }
-    };
-
-    fetchUser();
-  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     router.replace("/login");
   };
 
- return (
-    <main
-      className="min-h-screen flex flex-col items-center justify-start p-6
-                bg-gradient-to-br from-[#addae2] to-[#dceeff] animate-[dreamyFlow_15s_ease_infinite]"
-    >
-      {/* Top bar */}
-      
-      <div className="w-full flex flex-col md:flex-row items-center justify-between mb-6 gap-3 md:gap-0">
-        {/* Left: The Polar Plate */}
-        <div className="text-[#006D77] text-2xl md:text-3xl font-extrabold cursor-pointer">
-          The Polar Plate
-        </div>
-
-        {/* Center: Welcome */}
-        {username && (
-          <div className="text-[#006D77] text-3xl md:text-4xl font-bold text-center">
-            Welcome, {username} 😊
-          </div>
-        )}
-
-        {/* Right: Logout */}
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-md cursor-pointer text-sm md:text-base"
-        >
-          Logout
-        </button>
-      </div>
-
-      {/* Dining hall menu */}
+  return (
+    <main className="min-h-dvh bg-cream">
       <DiningHallMenu
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        headerRight={
+          <button
+            onClick={handleLogout}
+            className="cursor-pointer min-h-11 rounded-full border border-cream px-3.5 text-sm font-medium text-cream lg:px-[18px] lg:text-[15px]
+                       transition-colors hover:bg-cream hover:text-brick
+                       focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream"
+          >
+            Log out
+          </button>
+        }
       />
     </main>
   );
 }
-
 
 export default withAuth(DashboardPage);

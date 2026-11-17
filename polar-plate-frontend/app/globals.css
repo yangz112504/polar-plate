@@ -1,154 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/*
+ * "Hubbard" theme (SystemDesign.md #28). All colors and fonts live in this one @theme block, so
+ * Tailwind generates classes like bg-brick, text-ink, font-heading from them. The colors are
+ * defined at the top level, not inside a media query (the old Bowdoin variables only existed in
+ * dark mode, which was a bug). There is no dark mode yet.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bowdoin-black: #231F20;
-    --bowdoin-white: #FFFFFF;
-    --bowdoin-brick: #9B2822;
-    --bowdoin-pine: #687C2F;
-    --light-grey: #F4F4F4;
-    --heading-font: 'Merriweather', serif;
-    --body-font: 'Lato', sans-serif;
-  }
+  --color-brick: #9B2822;
+  --color-brick-dark: #7E1F1A;
+  --color-cream: #F6F0E4;
+  --color-cream-light: #FBF7EE;
+  --color-panel: #EADFC9;
+  --color-ink: #231F20;
+  --color-ink-soft: #5A5148;
+  --color-line: #D9CDB6;
+  --font-heading: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-public-sans), system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
 }
 
-/* --- Hero Section --- */
-.hero-section {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  box-sizing: border-box;
-  align-items: stretch;
-  color: var(--bowdoin-black);
+h1, h2, h3 {
+  font-family: var(--font-heading);
 }
 
-.hero-content {
-  flex: 1;
-  padding: 2rem 3rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  text-align: left;
-  max-width: 50vw;
-  margin: 0 auto;
-  z-index: 2;
-
-  background: linear-gradient(135deg, #addae2, #dceeff);
-  background-size: 300% 300%;
-  animation: dreamyFlow 15s ease infinite;
-
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+/*
+ * Running-bond brick pattern for the header, drawn with three stacked CSS layers (no image file),
+ * copied from the "1 Hubbard" canvas boards: horizontal mortar lines, then vertical joints on even
+ * rows, then joints shifted half a brick on odd rows (the masks pick which rows each layer shows).
+ * --row is the brick height and --brick its width; both grow on desktop.
+ */
+.brick-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --row: 20px;
+  --brick: 56px;
+}
+@media (min-width: 1024px) {
+  .brick-layer { --row: 24px; --brick: 72px; }
+}
+.brick-rows {
+  background: repeating-linear-gradient(0deg, rgba(35, 31, 32, 0.16) 0 2px, transparent 2px var(--row));
+}
+.brick-joints-a {
+  background: repeating-linear-gradient(90deg, rgba(35, 31, 32, 0.16) 0 2px, transparent 2px var(--brick));
+  -webkit-mask-image: repeating-linear-gradient(0deg, #000 0 var(--row), transparent var(--row) calc(var(--row) * 2));
+  mask-image: repeating-linear-gradient(0deg, #000 0 var(--row), transparent var(--row) calc(var(--row) * 2));
+}
+.brick-joints-b {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(var(--brick) / 2),
+    rgba(35, 31, 32, 0.16) calc(var(--brick) / 2) calc(var(--brick) / 2 + 2px),
+    transparent calc(var(--brick) / 2 + 2px) var(--brick)
+  );
+  -webkit-mask-image: repeating-linear-gradient(0deg, transparent 0 var(--row), #000 var(--row) calc(var(--row) * 2));
+  mask-image: repeating-linear-gradient(0deg, transparent 0 var(--row), #000 var(--row) calc(var(--row) * 2));
 }
 
-@keyframes dreamyFlow {
-  0% { background-position: 0% 0%; }
-  50% { background-position: 100% 100%; }
-  100% { background-position: 0% 0%; }
+/* Section outlines only appear while the menu is scrolling (data-scrolling is set by the component). */
+.menu-section {
+  border: 2px solid transparent;
+  transition: border-color 0.25s;
+}
+[data-scrolling="true"] .menu-section {
+  border-color: var(--color-brick);
 }
 
-.hero-title,
-.hero-subtitle,
-.hero-description {
-  font-family: var(--body-font);
-  color: var(--bowdoin-black);
-}
-
-.hero-title {
-  font-family: var(--heading-font);
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-}
-
-.hero-subtitle {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.hero-description {
-  font-size: 1.1rem;
-  margin-bottom: 2rem;
-  color: #555;
-  line-height: 1.6;
-}
-
-/* --- Call-to-Action Buttons --- */
-.hero-cta-buttons {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.cta-button {
-  font-family: var(--body-font);
-  font-size: 1.1rem;
-  padding: 0.8rem 2rem;
-  border-radius: 8px;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-  font-weight: 700;
-  transition: all 0.3s ease;
-}
-
-.cta-button.primary {
-  background-color: #006D77;
-  color: #ffffff;
-  border: 2px solid #006D77;
-}
-
-.cta-button.primary:hover {
-  background-color: #005A63;
-  border-color: #004851;
-  transform: translateY(-2px);
-}
-
-.cta-button.secondary {
-  background-color: transparent;
-  color: #006D77;
-  border: 2px solid #006D77;
-}
-
-.cta-button.secondary:hover {
-  background-color: #006D77;
-  color: #ffffff;
-  transform: translateY(-2px);
-}
-
-/* --- Hero Image --- */
-.hero-image {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-.hero-image img {
-  height: 100%;
-  width: 100%; /* Add this to ensure it fills the width */
-  object-fit: cover; /* Change from 'contain' to 'cover' */
-  object-position: center 60%;
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }
