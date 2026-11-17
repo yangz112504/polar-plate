@@ -50,7 +50,7 @@ are now TypeScript; `DiningHallMenu` owns the hall state; header/tabs/average/"Y
 sections scroll (outlines show while scrolling). `StarRating`, landing, login, register, dashboard restyled.
 Checked by: `npm test` (51 passing), `typecheck`, `lint`, `build` all clean. NOT checked: how it looks in a browser,
 especially at 375x667 (the fixed bars use a lot of a small phone's height). The dashboard's "Welcome, <name>" greeting
-and its `/api/users/me` call were dropped in the redesign (no room in the header); re-add if wanted.
+was replaced by `UserBadge` (cream circle with the first letter, name beside it from 1024px up; empty circle if `/api/users/me` fails). It becomes the avatar / profile link in Step 5.
 Committed as `1021bcc`, then code-review fixes #8/#9: every frontend page and component is now TypeScript (only the `.mjs` tool configs remain JS; unused `lib/utils.js` deleted) and `lib/parseMenu.ts` validates the menu response (frontend 72 tests passing). `npm run build` not re-run after the conversion (dev server was up); run it once before merging.
 Comments (Step 9) are NOT part of Step 4. Unrelated leftover (DON'T FIX here): backend unused deps.
 
