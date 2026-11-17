@@ -68,4 +68,18 @@ describe("UserBadge", () => {
     expect(fetchFn).not.toHaveBeenCalled();
     expect(screen.getByTestId("user-badge-circle")).toHaveTextContent("");
   });
+
+  it("puts the username in a hover tooltip on the circle once it has loaded", async () => {
+    mockMe("zai");
+    render(<UserBadge />);
+    await screen.findByText("zai");
+    expect(screen.getByTestId("user-badge-circle")).toHaveAttribute("title", "zai");
+  });
+
+  it("has no tooltip while there is no name (failed or no token)", () => {
+    localStorage.clear();
+    mockMe("zai");
+    render(<UserBadge />);
+    expect(screen.getByTestId("user-badge-circle")).not.toHaveAttribute("title");
+  });
 });
