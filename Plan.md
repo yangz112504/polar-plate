@@ -3,57 +3,55 @@
 > Read `CLAUDE.md` first: plan together, tests first (TDD), get the owner's agreement before implementing.
 
 ## Status (as of 2026-11-16)
-**Done and committed on branch `step0-foundations`** (commits `d53ef82` backend, `c555d47` frontend, then Step 2: `6a71e32`, `0ddca3b`):
+**Steps 0-3 are done and committed on branch `step0-foundations`** (pushed earlier; the last two commits,
+`7002953` and `2e28ad7`, are local until pushed). No PR yet.
+
 - **Step 0 (foundations):** TypeScript + Vitest + Drizzle on Supabase Postgres (RLS on), repositories,
   `dayKey()`, auth service, zod-validated routes via `createApp()`, `server.js` retired. 120 Mongo users
-  migrated (ratings discarded on purpose). Old ratings are gone; users log in with their old passwords.
+  migrated (ratings discarded on purpose; users log in with their old passwords). Mongo is gone from the
+  project (`SystemDesign.md` #17).
 - **Step 1 (daily menu pipeline):** menus come from Bowdoin's JSON endpoint
-  (`https://dining-menu.bowdoin.edu/menu/<date>/<thorne|moulton>/<meal>`), not Playwright (removed).
-  Cache-aside in `meals.items` + single-flight; a hall failure doesn't hide the other hall (partial results);
-  frontend shows "No menu found". The old Playwright scraper had broken because the page's element ids changed.
-- **Tests:** `cd backend && docker compose -f docker-compose.test.yml up -d && npm test` (186 passing at last run; 14 fewer than before because the Mongo migration tests were removed),
-  `npm run typecheck`. Frontend has no tests yet.
-- **Decision log:** `SystemDesign.md` entries #1-#25 (untracked, personal). Update it whenever a design decision is made.
+  (`https://dining-menu.bowdoin.edu/menu/<date>/<thorne|moulton>/<meal>`), not Playwright. Cache-aside in
+  `meals.items` + single-flight; a hall failure doesn't hide the other hall (partial results); the frontend
+  shows "No menu found".
+- **Step 2 (meal tabs):** `GET /api/menus/schedule` -> `{date, meals, defaultMeal}` from the pure
+  `getSchedule(now)` (weekday Breakfast/Lunch/Dinner, weekend Brunch/Dinner, 5 pm cutoff, America/New_York).
+  Ratings use the server's day; POST only accepts meals served that day; the all-ratings route is
+  `/api/ratings/:hall/:meal/all`. Known, accepted trade-off: a rating submitted just after midnight lands on the
+  next day's meal (`SystemDesign.md` #25).
+- **Step 3 (half-star ratings):** click once = full star, quick double-click (within 400 ms, timed by us) = half
+  star (`SystemDesign.md` #26). Pure rule in `polar-plate-frontend/lib/starScore.ts`; `StarRating.tsx` and
+  `StarFraction.tsx` are TypeScript, stars are real buttons, and the rating row stacks on narrow phones.
+  The backend already supported half steps; a bad score now returns a clear 400 message. The frontend got its
+  first tests (Vitest + Testing Library + happy-dom) and `tsconfig.json` (replacing `jsconfig.json`).
+- **Rating save speed:** `POST /api/ratings` is ONE database round trip. `ratingRepository.rateMeal` does meal +
+  rating + average in a single SQL statement, chosen for speed over readability (`SystemDesign.md` #27). The
+  unused `upsertRating` / `getOrCreateMeal` were deleted. `getMealStats` stays (GET stats route, Step 7).
+  Owner confirmed it is noticeably faster.
 
-**Not yet done / owner to-dos:**
-- Branch `step0-foundations` is pushed to GitHub (public repo); no PR yet. `Plan.md`, `SystemDesign.md` and
-  `run-all-tests.sh` are tracked and public (owner's choice; they contain no secrets).
-- ✅ Supabase DB password rotated and `DATABASE_URL` updated in `backend/.env` (owner, 2026-11-16).
-- **Still open:** the old `SECRET_KEY` and `MONGO_URI` from the Aug 2025 `backend/.env` are in public git
-  history on `main`. Retire the Mongo database user/cluster, and make sure `SECRET_KEY` in `backend/.env` is a
-  new value. Deleting the `MONGO_URI` line from `backend/.env` is also on the owner (Mongo is no longer used).
-- Mongo removed from the project (2026-11-16): the one-time migration script, its tests and the `mongoose`
-  dev dependency are deleted. The migration already ran (120 users); see `SystemDesign.md` #17.
+**Tests:** `./run-all-tests.sh` from the repo root runs everything (start the test DB first:
+`cd backend && docker compose -f docker-compose.test.yml up -d`). Last run: backend 206 passing, frontend 21
+passing, both typechecks, frontend lint and build clean. Frontend: `cd polar-plate-frontend && npm test`.
 
-**Step 2 (meal tabs): done, reviewed and committed** (`6a71e32` feature, `0ddca3b` review fixes).
-- `GET /api/menus/schedule` -> `{date, meals, defaultMeal}` from the pure `getSchedule(now)` (weekday
-  Breakfast/Lunch/Dinner, weekend Brunch/Dinner, 5 pm cutoff, America/New_York). Frontend renders a second
-  row of meal tabs under the Thorne/Moulton tabs. Decisions in `SystemDesign.md` #24-#25.
-- Ratings use the server's day (client `date` removed); POST only accepts meals served that day;
-  all-ratings route is now `/api/ratings/:hall/:meal/all`.
-- Verified (at the time of Step 2): backend 200 tests passing, typecheck, frontend lint + build, and a manual browser check by the owner.
-- **Open from the code review:** a page left open past midnight ET keeps yesterday's tabs (refetch the schedule
-  on window focus would fix it); the known B1 trade-off (rating just after midnight lands on the next day).
-- **Design note for Step 4:** put the hall name before the meal name in the main header above the menu
-  (e.g. "Thorne Breakfast"); decide how the two tab rows look.
+**Decision log:** `SystemDesign.md` entries #1-#27. Update it whenever a design decision is made.
+`Plan.md`, `SystemDesign.md` and `run-all-tests.sh` are tracked and public (owner's choice; no secrets in them).
 
-**Step 3 (half-star ratings): implemented, NOT yet committed or browser-checked.**
-- Input changed from the original "click the left/right half" to: click once = full star, quick double-click
-  (within 400 ms, timed by us) = half star. Reason: splitting a star with a finger is hard on phones.
-  Decision: `SystemDesign.md` #26. Pure rule in `polar-plate-frontend/lib/starScore.ts`; `StarRating.tsx` and
-  `StarFraction.tsx` are now TypeScript (stars are real buttons).
-- Backend already supported half steps; only change is a clear 400 message for bad scores.
-- Frontend now has tests (Vitest + Testing Library + happy-dom): `cd polar-plate-frontend && npm test`;
-  `jsconfig.json` replaced by `tsconfig.json`; `npm run typecheck` added.
-- Verified: backend 199 tests, frontend 21 tests, both typechecks, frontend lint and build, `./run-all-tests.sh` all pass.
-  **To do:** manual browser check (desktop + phone size), then `/code-review`, then commit.
+**Owner to-dos:**
+- Make sure `SECRET_KEY` in `backend/.env` is a new value: the old one from the Aug 2025 `.env` is in public git
+  history on `main`. (Supabase DB password already rotated, 2026-11-16. Retiring the Mongo cluster is handled by
+  the owner outside this plan.)
+- Open a PR for `step0-foundations` when ready.
 
-**Rating save latency (after Step 3): rating POST is now ONE database round trip** (`ratingRepository.rateMeal`
-does meal + rating + average in a single SQL statement, chosen for speed over readability; `SystemDesign.md` #27).
-Backend 206 tests pass; unused `upsertRating`/`getOrCreateMeal` deleted (Step 0 text below still names them as history).
-`getMealStats` kept (GET stats route, Step 7). Not committed yet.
-
-**Next action: Step 4 (design system + dashboard redesign)**, see the roadmap. Start in plan mode.
+**Next action: Step 4 (design system + dashboard redesign, mobile-first).** Per `CLAUDE.md`: start in plan mode,
+present 2-3 designs with trade-offs, owner decides, then tests first where logic is involved. Notes for it:
+- Design for a ~375px phone first (iPhone SE), then widen. The owner will mostly use it on a phone.
+- Put the hall name before the meal name in the main header above the menu (e.g. "Thorne Breakfast");
+  decide how the two tab rows (hall, meal) look.
+- Bowdoin theme, more readable, less plain, not generic. Known CSS issue: the Bowdoin color variables in
+  `globals.css` are only defined inside the dark-mode media query.
+- Keep the half-star hint ("Click once for a full star, double-click for a half star.") and the 400 ms window
+  in mind when restyling `StarRating`; its tests (`tests/components/StarRating.test.tsx`) rely on the
+  `aria-label="Rate N stars"` buttons and the `star-full|half|empty` test ids.
 
 ---
 
