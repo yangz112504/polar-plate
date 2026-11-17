@@ -2,9 +2,8 @@
 
 > Read `CLAUDE.md` first: plan together, tests first (TDD), get the owner's agreement before implementing.
 
-## Status (as of 2026-11-16)
-**Steps 0-3 are done and committed on branch `step0-foundations`** (pushed earlier; the last two commits,
-`7002953` and `2e28ad7`, are local until pushed). No PR yet.
+## Status (as of 2026-11-17)
+**Steps 0-4 are done and committed on branch `step0-foundations`, pushed to origin.** No PR yet.
 
 - **Step 0 (foundations):** TypeScript + Vitest + Drizzle on Supabase Postgres (RLS on), repositories,
   `dayKey()`, auth service, zod-validated routes via `createApp()`, `server.js` retired. 120 Mongo users
@@ -30,10 +29,10 @@
   Owner confirmed it is noticeably faster.
 
 **Tests:** `./run-all-tests.sh` from the repo root runs everything (start the test DB first:
-`cd backend && docker compose -f docker-compose.test.yml up -d`). Last run: backend 206 passing, frontend 21
+`cd backend && docker compose -f docker-compose.test.yml up -d`). Last run: backend 206 passing, frontend 80
 passing, both typechecks, frontend lint and build clean. Frontend: `cd polar-plate-frontend && npm test`.
 
-**Decision log:** `SystemDesign.md` entries #1-#27. Update it whenever a design decision is made.
+**Decision log:** `SystemDesign.md` entries #1-#28. Update it whenever a design decision is made.
 `Plan.md`, `SystemDesign.md` and `run-all-tests.sh` are tracked and public (owner's choice; no secrets in them).
 
 **Owner to-dos:**
@@ -42,17 +41,25 @@ passing, both typechecks, frontend lint and build clean. Frontend: `cd polar-pla
   the owner outside this plan.)
 - Open a PR for `step0-foundations` when ready.
 
-**Step 4 (design system + dashboard redesign): implemented 2026-11-17, not yet committed; awaiting the owner's look on a
-real phone.** "Hubbard" look (`SystemDesign.md` #28), rebuilt from the canvas files after the first pass did not match: brick `#9B2822` on cream `#F6F0E4`, Fraunces + Public Sans, tokens in the Tailwind `@theme` block of `globals.css` (the old dark-mode-only Bowdoin variables, hero CSS and
-`home.module.css` are gone). New: `lib/menuHeader.ts`, `lib/useSchedule.ts` (refetches on tab focus, resets to the new
-day's default meal), `components/SegmentedTabs.tsx`, `PolarBearMark.tsx`. `DiningHallMenu`, `AverageRating`, `AllRatings`
-are now TypeScript; `DiningHallMenu` owns the hall state; header/tabs/average/"Your rating" stay fixed and only the menu
-sections scroll (outlines show while scrolling). `StarRating`, landing, login, register, dashboard restyled.
-Checked by: `npm test` (51 passing), `typecheck`, `lint`, `build` all clean. NOT checked: how it looks in a browser,
-especially at 375x667 (the fixed bars use a lot of a small phone's height). The dashboard's "Welcome, <name>" greeting
-was replaced by `UserBadge` (cream circle with the first letter only; the name is in a hover tooltip and hidden text for screen readers; empty circle if `/api/users/me` fails). It becomes the avatar / profile link in Step 5.
-Committed as `1021bcc`, then code-review fixes #8/#9: every frontend page and component is now TypeScript (only the `.mjs` tool configs remain JS; unused `lib/utils.js` deleted) and `lib/parseMenu.ts` validates the menu response (frontend 72 tests passing). `npm run build` not re-run after the conversion (dev server was up); run it once before merging.
-Comments (Step 9) are NOT part of Step 4. Unrelated leftover (DON'T FIX here): backend unused deps.
+**Step 4 (design system + dashboard redesign, mobile-first): DONE, committed and pushed (2026-11-17).** The owner checked it
+in a browser on desktop and phone and likes it. Look = "Hubbard" (`SystemDesign.md` #28), copied from the canvas files
+(brick `#9B2822` on cream `#F6F0E4`, Fraunces + Public Sans, tokens in the Tailwind `@theme` block of `globals.css`).
+Layout: one column on phones; from 1024px a left column (title, average, "Your rating") beside a two-column scrolling menu;
+the page itself scrolls on very short windows (content area keeps 440px). New: `lib/menuHeader.ts`, `lib/useSchedule.ts`
+(refetches on tab focus, one request at a time), `lib/parseMenu.ts` (zod-validates the menu response), `SegmentedTabs`,
+`BrickPattern`, `PolarBearMark`, `UserBadge` (header circle with the user's first letter; name only in a tooltip and
+hidden text; empty circle if `/api/users/me` fails). The whole frontend is now TypeScript (only `.mjs` tool configs are
+JS). `/code-review` found 9 issues: #2-#6, #8, #9 fixed; **#1 still open**: `StarRating` does not reload the saved score
+when the server day rolls over while the page stays open and the meal name is unchanged (it could then overwrite today's
+rating with yesterday's). #7 (nested scroll on short landscape phones) accepted. Frontend: 80 tests passing, typecheck and
+lint clean. **Not re-run since the TypeScript conversion: `npm run build`** (the dev server was up); run it once before a PR.
+
+**Next action: Step 5 (profile basics), not started.** Per `CLAUDE.md`: start in plan mode, present 2-3 designs with pros,
+cons and trade-offs, owner decides, tests first. Scope from the roadmap: username change, password change (current + new +
+confirm), bio, avatar upload (Supabase Storage), and the auth fixes in "System design review" #7 (JWT holds a stale
+`username` after a rename; a password change does not log out old tokens: `tokenVersion` vs Supabase Auth). See also the
+"Step 5 note: profile dropdown on the header circle" below. Good moment to also fix open review item #1 (above).
+Comments (Step 9) are NOT part of Step 4. Unrelated leftover (DON'T FIX here): backend unused deps (and `clsx` / `tailwind-merge` in the frontend now that `lib/utils.js` is gone).
 
 ---
 
@@ -129,13 +136,21 @@ Defaults chosen but **not yet confirmed** with the owner (confirm when Step 0 st
 | 1 | ✅ **Daily menu pipeline**: fix the scraper, fill `meals`, get-or-scrape service + single-flight lock | Fixes the cost problem; meals get real items |
 | 2 | ✅ **Meal tabs + default tab by time**; weekend Brunch/Dinner; ratings use the server day + upsert | First thing that uses stored menus; correct rating data |
 | 3 | ✅ **Half-star ratings** (0.5–5.0, step 0.5; validated by the server and the DB) | Finishes the core rating experience |
-| 4 | ✅ (pending visual check) **Design system + dashboard redesign, mobile-first** (design for a 375px phone first, then widen; Bowdoin tokens, typography, buttons; use the `frontend-design` plugin) | Comes before new pages, so they're built in the new style |
+| 4 | ✅ **Design system + dashboard redesign, mobile-first** (design for a 375px phone first, then widen; Bowdoin tokens, typography, buttons; use the `frontend-design` plugin) | Comes before new pages, so they're built in the new style |
 | 5 | **Profile basics**: username, password change, bio, avatar; auth fixes (#7) | Gives history, favorites and friends a home |
 | 6 | **Rating history → favorites → pin to profile** | Ratings ⋈ meals; first "my data" view |
 | 7 | **Stats page**: today's B/L/D side by side; best and worst meals of the week | Aggregations that grow out of history |
 | 8 | **Streaks** | Distinct rating days per user via `dayKey` |
 | 9 | **Comments per meal**: each comment shows the user, their profile picture (avatar, from Step 5), the text and when it was posted | Attach to the meal identity; moderation and rate limits. Needs Step 5's avatars first; Step 4 only keeps room for it in the layout |
 | 10 | **Friends** (requests, privacy) | Most complex; builds on everything above |
+
+## Step 5 note: profile dropdown on the header circle
+The `UserBadge` circle (header, next to Log out) should become a button that opens a small profile menu, like most apps:
+the full username, the avatar (replacing the letter once avatars exist), "My profile" / settings, and **Log out moved
+into the menu**. Deliberately not built before Step 5: today it would hold only the name and Log out (no profile page
+to link to), and hiding Log out costs an extra tap. When we plan it (2-3 options + trade-offs first), decide: a simple
+disclosure button vs a full ARIA menu, closing on Escape / outside click / route change, focus handling, tap target
+size on phones (44px+), and whether Log out stays visible on mobile.
 
 ## Later idea (not scheduled): installable web app (PWA)
 The owner wants Polar Plate to stay a website but be "add to home screen"-able, so it opens from a phone icon

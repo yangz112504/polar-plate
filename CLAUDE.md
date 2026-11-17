@@ -7,12 +7,12 @@ It is also a **learning project**: the owner is a junior engineer teaching
 themselves system design and how to work well with agentic AI. Understanding matters more than speed.
 
 ## What (current stack — expect this to change)
-- `backend/` — Node + Express 5, Postgres (Supabase) via Drizzle, JWT auth, Playwright/Cheerio scraping.
+- `backend/` — Node + Express 5, Postgres (Supabase) via Drizzle, JWT auth, menus fetched from Bowdoin's JSON endpoint.
   Entry: `backend/src/server.ts` (`src/app.ts` wires routes, auth service and repositories; schema in
-  `src/db/schema.ts`; tests in `backend/tests/`); `backend/routes/menu.js` (menu scraper, still JS).
+  `src/db/schema.ts`; menu pipeline in `src/menus/`; tests in `backend/tests/`).
 - `polar-plate-frontend/` — Next.js 15 (App Router) + React 19, Tailwind, MUI, react-hook-form + zod.
   Pages in `app/`, shared UI in `components/`.
-- Currently plain JavaScript; the plan is to migrate to **TypeScript**. Write new code in TypeScript.
+- Backend and frontend are both TypeScript (only the `.mjs` tool configs are JS). Write new code in TypeScript.
 - The database is Postgres on Supabase (Mongo is gone). Caching is an open decision (a Redis cache is
   possible). Don't hard-wire assumptions about either; isolate data access so a swap stays cheap.
 

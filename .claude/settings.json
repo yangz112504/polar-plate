@@ -4,5 +4,8 @@
       "Read(./**/node_modules/**)",
       "Read(./**/package-lock.json)"
     ]
+  },
+  "enabledPlugins": {
+    "frontend-design@anthropic-plugin-directory": true
   }
 }
