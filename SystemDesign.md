@@ -158,6 +158,28 @@ Newest decisions go at the bottom. Kept untracked on purpose (not committed).
 - **Follow-up (code review):** a rating POST is only accepted for a meal the schedule serves that day (no Lunch on a Saturday, no Brunch on a weekday), checked against `getSchedule(now).meals`, so the tabs and what can be rated share one source of truth. GET routes create nothing, so unserved meals there just return empty results. `getSchedule` also takes its date from `dayKey` so there is one definition of "Bowdoin's day".
 - **Also:** zod allow-lists (`hall`: Thorne/Moulton; `meal`: Breakfast/Brunch/Lunch/Dinner) so unknown values return 400 and create no rows.
 
+## 26. Half-star input: a quick double-click, timed by us (Step 3, chosen)
+- **Problem:** the DB and API already accept 0.5 steps; only the UI (whole stars) blocked them.
+- **Options:** (a) click the left or right half of a star (the first agreement; what MUI `Rating` and most premade libraries do); (b) the browser's native `dblclick` event; (c) our own timing of two `click` events; (d) a toggle on every second press.
+- **Chosen: (c).** One click = full star; a second click on the same star within 400 ms = half star; a slow second click is just a new single click. Why not (a): splitting a star with a fingertip is hard on phones (the owner's accessibility concern). Why not (b): `dblclick` is unreliable on touch screens (double-tap zoom) and cannot be triggered by keyboard; timing clicks works for mouse, touch and Enter/Space. Why not (d): a saved 4-star rating would turn into 3.5 on one tap.
+- **Design:** the rule is a pure function `nextScore` that receives the time as an argument, so tests need no real waiting. Stars are real `<button>`s (keyboard and screen readers), with a hint line under them.
+- **Premade components:** none implements "double-click for half", so the custom component stays (rewritten in TypeScript).
+- **Also:** bad scores now return a clear 400 message; the frontend got its first test setup (Vitest + Testing Library + happy-dom; jsdom failed on Node 20.18).
+- **Trade-off:** the 400 ms window is a guess; if users find it too tight, it is one constant.
+
+## 27. Faster rating save: ONE database round trip (chosen: one statement, performance over readability)
+- **Problem:** Submit took ~0.67 s. `POST /api/ratings` ran up to 4 queries one after another (insert meal, select meal, upsert rating, read average), each a network round trip to Supabase.
+- **Why not `Promise.all`:** the queries depend on each other (the rating needs the meal id; the average must include the new rating), so they can't run in parallel. The only way to cut time is fewer statements.
+- **Options:** (A) measure only; (B) 2 statements (CTE for meal + rating, then the existing average query); (C) 1 statement that also computes the average.
+- **Step 1, chosen B** (4 -> 2 trips): the owner measured it and found it clearly faster.
+- **Step 2, chosen C** (2 -> 1 trip) at the owner's request: **performance was deliberately chosen over readability** for this one hot path. The statement (`ratingRepository.rateMeal`) is long and harder to read than B. To pay for that, it carries a block comment listing exactly which steps run (`m`: find/create meal, `r`: save rating, `o`: sum of everyone else's ratings, plus the final SELECT that adds this user's new score), so what it does is documented even if the SQL is dense.
+- **Why the average is computed that way:** all steps of one statement see the same snapshot, so the step that sums cannot see the rating just written. We sum everyone *else's* ratings and add the new score in the final SELECT (average = (others' total + new) / (others' count + 1)).
+- **Details:** the score is validated before touching the DB, so a bad score can't create a meal row. The meal insert uses a no-op `DO UPDATE` because `DO NOTHING` returns no row when the meal exists.
+- **Trade-offs:** (1) harder to read and change; (2) a rating saved by someone else at the same instant may be missing from the returned average, corrected on the next read (harmless at ~120 users); (3) each rating briefly locks its meal row (6 rows/day, irrelevant here).
+- **Tests:** exactly 1 SQL statement per POST (counted through a Drizzle logger); the returned average/count match `getMealStats`; re-rating replaces the user's own score; 10 concurrent calls leave one meal row.
+- **Kept:** `getMealStats` stays because the GET stats route and the future stats page (Step 7) use it. The older `upsertRating` and `getOrCreateMeal` became unused and were deleted.
+- **Where the time really goes:** locally each round trip crosses the internet to Supabase; deployed in the same region as the database a trip costs a few ms. Optimistic UI was rejected (could show success for a failed save).
+
 ## Planned / open
 - Auth gaps (stale username in JWT, password change doesn't revoke tokens): Step 5 (`tokenVersion` or Supabase Auth).
 - Favorites: `ratings.is_favorite` vs a `favorites` table, decided in Step 6.

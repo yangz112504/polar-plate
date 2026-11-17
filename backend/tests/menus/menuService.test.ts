@@ -5,6 +5,7 @@ import { createMenuService } from "../../src/menus/menuService";
 import type { MenuCategory } from "../../src/db/schema";
 import { createTestDb } from "../helpers/testDb";
 import { resetDb } from "../helpers/resetDb";
+import { insertMeal } from "../helpers/insertMeal";
 
 const { db, close } = createTestDb();
 const meals = createMealRepository(db);
@@ -61,7 +62,7 @@ describe("menuService.getMenus: cache-aside", () => {
   });
 
   it("works when a rating already created the meal row with no menu yet", async () => {
-    await meals.getOrCreateMeal(DATE, "Thorne", "Lunch"); // items null
+    await insertMeal(db, DATE, "Thorne", "Lunch"); // items null
     const service = createMenuService({ meals, fetchMenu: fakeFetch() });
     expect((await service.getMenus(DATE, "Lunch")).Thorne).toEqual(thorne);
   });

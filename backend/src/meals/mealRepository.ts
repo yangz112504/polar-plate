@@ -34,28 +34,6 @@ export function createMealRepository(db: Db) {
         .where(and(eq(meals.serviceDate, serviceDate), eq(meals.hall, hall), eq(meals.mealType, mealType)));
       return rows[0] ?? null;
     },
-    /**
-     * Finds the meal for (date, hall, type), creating it with null items if missing.
-     * Safe under concurrent calls: the UNIQUE constraint guarantees a single row.
-     * @param serviceDate 'YYYY-MM-DD' from dayKey().
-     * @returns The existing or newly created meal.
-     */
-    async getOrCreateMeal(serviceDate: string, hall: string, mealType: string): Promise<Meal> {
-      // DO NOTHING (rather than DO UPDATE) leaves existing rows untouched; it returns no row
-      // when the meal already existed, so we fall back to a SELECT.
-      const inserted = await db
-        .insert(meals)
-        .values({ serviceDate, hall, mealType })
-        .onConflictDoNothing()
-        .returning();
-      if (inserted[0]) return inserted[0];
-
-      const [existing] = await db
-        .select()
-        .from(meals)
-        .where(and(eq(meals.serviceDate, serviceDate), eq(meals.hall, hall), eq(meals.mealType, mealType)));
-      return existing;
-    },
   };
 }
 export type MealRepository = ReturnType<typeof createMealRepository>;

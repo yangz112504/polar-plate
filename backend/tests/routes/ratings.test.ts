@@ -1,6 +1,10 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "../../src/db/schema";
+import { TEST_DATABASE_URL } from "../helpers/testDb";
 import { createApp } from "../../src/app";
 import { createTestDb } from "../helpers/testDb";
 import { resetDb } from "../helpers/resetDb";
@@ -96,6 +100,23 @@ describe("POST /api/ratings", () => {
     expect(res.body.avgRating).toBe("4.50");
   });
 
+  // Latency: every statement is a network round trip to the database, so a rating save must stay cheap.
+  it("saves a rating with exactly 1 SQL statement (one round trip)", async () => {
+    const statements: string[] = [];
+    const client = postgres(TEST_DATABASE_URL);
+    const countingDb = drizzle(client, { schema, logger: { logQuery: (q) => void statements.push(q) } });
+    try {
+      const countingApp = createApp({ db: countingDb, secretKey: SECRET, now: () => NOW });
+      await rate(aliceToken, { ...meal, rating: 4 }, countingApp); // first rating of the day: creates the meal
+      expect(statements.length).toBe(1);
+      statements.length = 0;
+      await rate(aliceToken, { ...meal, rating: 3.5 }, countingApp); // meal exists, rating updated
+      expect(statements.length).toBe(1);
+    } finally {
+      await client.end();
+    }
+  });
+
   it.each(["hall", "meal", "rating"])("returns 400 when %s is missing", async (field) => {
     const res = await rate(aliceToken, { ...meal, rating: 4, [field]: undefined });
     expect(res.status).toBe(400);
@@ -105,6 +126,27 @@ describe("POST /api/ratings", () => {
     const res = await rate(aliceToken, { ...meal, rating });
     expect(res.status).toBe(400);
     expect(await count("ratings")).toBe(0);
+  });
+
+  // Step 3: both ends of the allowed range, and the half steps next to them, are valid.
+  it.each([0.5, 1, 2.5, 4.5, 5])("accepts the score %s and echoes it back", async (rating) => {
+    const res = await rate(aliceToken, { ...meal, rating });
+    expect(res.status).toBe(200);
+    expect(res.body.userRating).toBe(rating);
+    expect(await count("ratings")).toBe(1);
+  });
+
+  // Step 3: a bad score must say what is allowed, not the generic "hall, meal, and rating required".
+  it.each([0, 0.25, 5.5, 2.3, -1, "abc", null])("explains the rule when the rating %j is invalid", async (rating) => {
+    const res = await rate(aliceToken, { ...meal, rating });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Rating must be between 0.5 and 5.0 in steps of 0.5");
+  });
+
+  it("keeps the generic message when the hall (not the rating) is wrong", async () => {
+    const res = await rate(aliceToken, { hall: "Foo", meal: "Lunch", rating: 4 });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Valid hall, meal, and rating required");
   });
 
   it.each([

@@ -13,6 +13,9 @@ const meal = z.enum(["Breakfast", "Brunch", "Lunch", "Dinner"]);
 const mealKey = z.object({ hall, meal });
 const rateBody = mealKey.extend({ rating: z.number() });
 
+/** What a client sees for a bad score; says what is allowed instead of a generic "invalid input". */
+const SCORE_MESSAGE = "Rating must be between 0.5 and 5.0 in steps of 0.5";
+
 /** Formats an average the way the old API did: 2-decimal string, or the number 0 when unrated. */
 function formatAverage(average: number | null): string | 0 {
   return average === null ? 0 : average.toFixed(2);
@@ -39,7 +42,9 @@ export function createRatingRoutes(deps: {
   router.post("/api/ratings", async (req, res) => {
     const body = rateBody.safeParse(req.body);
     if (!body.success) {
-      res.status(400).json({ message: "Valid hall, meal, and rating required" });
+      // If only the rating field is wrong (missing, not a number), say what a valid rating is.
+      const onlyRatingWrong = body.error.issues.every((issue) => issue.path[0] === "rating");
+      res.status(400).json({ message: onlyRatingWrong ? SCORE_MESSAGE : "Valid hall, meal, and rating required" });
       return;
     }
     const { hall, meal, rating } = body.data;
@@ -52,19 +57,24 @@ export function createRatingRoutes(deps: {
     }
     const { userId } = (req as AuthedRequest).user;
     try {
-      const { id: mealId } = await deps.meals.getOrCreateMeal(schedule.date, hall, meal);
-      const { created } = await deps.ratings.upsertRating({ userId, mealId, score: rating });
-      const stats = await deps.ratings.getMealStats(mealId);
+      // One database round trip: meal, rating and the new average are all handled by a single statement.
+      const { created, average, count } = await deps.ratings.rateMeal({
+        userId,
+        serviceDate: schedule.date,
+        hall,
+        mealType: meal,
+        score: rating,
+      });
       res.json({
         message: "Rating saved",
-        avgRating: formatAverage(stats.average),
-        totalRatings: stats.count,
+        avgRating: formatAverage(average),
+        totalRatings: count,
         updated: !created,
         userRating: rating,
       });
     } catch (err) {
       if (err instanceof InvalidScoreError) {
-        res.status(400).json({ message: err.message });
+        res.status(400).json({ message: SCORE_MESSAGE });
         return;
       }
       throw err;

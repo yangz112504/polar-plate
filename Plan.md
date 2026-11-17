@@ -37,10 +37,23 @@
 - **Design note for Step 4:** put the hall name before the meal name in the main header above the menu
   (e.g. "Thorne Breakfast"); decide how the two tab rows look.
 
-**Next action: Step 3 (half-star ratings).** Per `CLAUDE.md`: start in plan mode, present 2-3 designs with
-trade-offs, owner decides, then tests first. Agreed input: click the left or right half of a star (left half
-of star 3 = 2.5), scores 0.5-5.0 in 0.5 steps, validated by the server and the DB (the DB CHECK and
-`upsertRating` already allow half steps; the UI still offers whole stars 1-5 only).
+**Step 3 (half-star ratings): implemented, NOT yet committed or browser-checked.**
+- Input changed from the original "click the left/right half" to: click once = full star, quick double-click
+  (within 400 ms, timed by us) = half star. Reason: splitting a star with a finger is hard on phones.
+  Decision: `SystemDesign.md` #26. Pure rule in `polar-plate-frontend/lib/starScore.ts`; `StarRating.tsx` and
+  `StarFraction.tsx` are now TypeScript (stars are real buttons).
+- Backend already supported half steps; only change is a clear 400 message for bad scores.
+- Frontend now has tests (Vitest + Testing Library + happy-dom): `cd polar-plate-frontend && npm test`;
+  `jsconfig.json` replaced by `tsconfig.json`; `npm run typecheck` added.
+- Verified: backend 199 tests, frontend 21 tests, both typechecks, frontend lint and build, `./run-all-tests.sh` all pass.
+  **To do:** manual browser check (desktop + phone size), then `/code-review`, then commit.
+
+**Rating save latency (after Step 3): rating POST is now ONE database round trip** (`ratingRepository.rateMeal`
+does meal + rating + average in a single SQL statement, chosen for speed over readability; `SystemDesign.md` #27).
+Backend 206 tests pass; unused `upsertRating`/`getOrCreateMeal` deleted (Step 0 text below still names them as history).
+`getMealStats` kept (GET stats route, Step 7). Not committed yet.
+
+**Next action: Step 4 (design system + dashboard redesign)**, see the roadmap. Start in plan mode.
 
 ---
 
@@ -116,8 +129,8 @@ Defaults chosen but **not yet confirmed** with the owner (confirm when Step 0 st
 | 0 | ✅ **Foundations**: TS setup (backend + frontend), Vitest, Drizzle schema (`users`, `meals`, `ratings`), repository layer, `dayKey()`, existing routes moved onto Postgres with unchanged behavior | Cheapest time to switch DBs is before new tables exist; every later step uses these |
 | 1 | ✅ **Daily menu pipeline**: fix the scraper, fill `meals`, get-or-scrape service + single-flight lock | Fixes the cost problem; meals get real items |
 | 2 | ✅ **Meal tabs + default tab by time**; weekend Brunch/Dinner; ratings use the server day + upsert | First thing that uses stored menus; correct rating data |
-| 3 | **Half-star ratings** (0.5–5.0, step 0.5; validated by the server and the DB) | Finishes the core rating experience |
-| 4 | **Design system + dashboard redesign** (Bowdoin tokens, typography, buttons; use the `frontend-design` plugin) | Comes before new pages, so they're built in the new style |
+| 3 | ✅ **Half-star ratings** (0.5–5.0, step 0.5; validated by the server and the DB) | Finishes the core rating experience |
+| 4 | **Design system + dashboard redesign, mobile-first** (design for a 375px phone first, then widen; Bowdoin tokens, typography, buttons; use the `frontend-design` plugin) | Comes before new pages, so they're built in the new style |
 | 5 | **Profile basics**: username, password change, bio, avatar; auth fixes (#7) | Gives history, favorites and friends a home |
 | 6 | **Rating history → favorites → pin to profile** | Ratings ⋈ meals; first "my data" view |
 | 7 | **Stats page**: today's B/L/D side by side; best and worst meals of the week | Aggregations that grow out of history |
