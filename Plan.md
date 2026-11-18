@@ -61,8 +61,11 @@ avatar = first-letter circle with a color hashed from the user id. Slices, each 
    Tests: backend 217 passing, frontend 81 passing, both typechecks and frontend lint clean. The ratings "1 SQL statement" test now expects 2
    (auth check + save). Two old `/me` 404 tests were removed (now 403 in `tokenRevocation.test.ts`).
 2. **DONE (uncommitted):** `PATCH /api/users/me`, `PUT /api/users/me/password` (fresh token, 5 failures/15 min rate limit per user, `SystemDesign.md` #31); registration and the register form now follow the same username/password rules. Backend 256 passing, frontend 81 passing.
-3. Frontend: `/profile/settings` (username + password forms), `UserBadge` becomes a disclosure dropdown (full username, Settings, Log out;
-   "My profile" is added in Step 6 when it has content), letter avatar with hashed color (`lib/avatar.ts`, pure, tested).
+3. **DONE (uncommitted), needs the owner's eyes in a browser:** `/profile/settings` (brick header + a card each for username and password, theme tokens only),
+   `UserBadge` is now the account dropdown (full username, Settings, Log out; Log out moved out of the header), letter avatar with hashed color
+   (`lib/avatar.ts`), shared `lib/credentialRules.ts` (also used by the register form). Both forms confirm before saving (inline `ConfirmPrompt`). Frontend: 140 passing, typecheck and lint clean.
+   Owner checked the page and dropdown in a browser (looks good). Before deploying: run `cd backend && npm run db:migrate` against Supabase (migration 0002 is already applied to the dev DB).
+   Known gap (DON'T FIX here): after a password change in one tab, other tabs keep a revoked token until reload (`withAuth` only checks expiry).
 Then `/code-review` and `/security-review`. Where stats live: everyone's stats (most/least rated, lowest rated meal of the week) go on the MAIN
 dashboard in Step 7; personal stats and history go in the profile (Steps 6 and 8).
 Comments (Step 9) are NOT part of Step 4. Unrelated leftover (DON'T FIX here): backend unused deps (and `clsx` / `tailwind-merge` in the frontend now that `lib/utils.js` is gone).

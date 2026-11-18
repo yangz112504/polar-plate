@@ -6,22 +6,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod'; 
 import * as z from 'zod'; 
 import { useRouter } from 'next/navigation'; 
+import { passwordSchema, usernameSchema } from '@/lib/credentialRules';
 import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
 import { Tooltip } from '@mui/material'; 
 
 // Validation Schema
 const registerSchema = z.object({
-  // Same rules as the backend (backend/src/users/credentialRules.ts); the server re-checks them.
-  username: z.string()
-    .min(3, 'Username must be at least 3 characters.')
-    .max(20, 'Username must be at most 20 characters.')
-    .regex(/^[A-Za-z0-9_-]+$/, 'Use only letters, digits, _ or -.'),
+  username: usernameSchema,
   email: z.string()
     .email('Invalid email format.'),
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters.')
-    // bcrypt ignores everything after 72 bytes, so the server refuses longer passwords.
-    .refine((p) => new TextEncoder().encode(p).length <= 72, 'Password must be at most 72 bytes.'),
+  password: passwordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match.',
