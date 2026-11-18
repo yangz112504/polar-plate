@@ -206,6 +206,13 @@ Newest decisions go at the bottom. Kept untracked on purpose (not committed).
 - **Why 3:** free, nothing stored, nothing to attack, already what `UserBadge` shows. The color comes from a small fixed palette in the brick/cream theme, chosen by hashing the user id, so two "A" users look different (matters for comments in Step 9; the API must return the author's id there). Bio was dropped for the same reason: nobody needs it.
 - **Where stats live:** everyone's stats (most rated, least rated, lowest rated meal of the week) go on the main dashboard (Step 7); personal stats and history go in the profile (Steps 6 and 8).
 
+## 31. Credential rules and rate-limiting password changes (Step 5 slice 2, chosen)
+- **Rules (one place: `backend/src/users/credentialRules.ts`):** username 3-20 chars of letters, digits, `_`, `-`; password 8-72 bytes (bcrypt silently ignores bytes past 72, so a longer one would be only partly checked). Used by registration, rename and password change. Login is NOT checked, so older accounts with weaker credentials still get in. The register form mirrors the rules for friendly errors; the server is the authority.
+- **Status codes:** rename to a taken name is 409; a wrong current password is 400 (not 403, because 403 means "your token was revoked" and the frontend logs people out on it). A successful password change returns a fresh token, since it revokes the caller's old one too (#29).
+- **Rate limit (`express-rate-limit`):** 5 failed password changes per user per 15 minutes, then 429. Concept: *rate limiting*; it stops someone holding a stolen token from guessing the current password. Keyed by user id, not IP (shared dorm wifi must not lock people out); successes are not counted.
+- **Trade-off / scale:** the counters live in server memory, so they reset on restart and are not shared between servers. Fine for one server; at scale use a shared store such as Redis.
+- **Not changed (DON'T FIX):** usernames stay case-sensitive (`Alice` and `alice` can coexist).
+
 ## Planned / open
 - Favorites: `ratings.is_favorite` vs a `favorites` table, decided in Step 6.
 - Comments: validate with zod, rate limit, never `dangerouslySetInnerHTML`.

@@ -11,14 +11,17 @@ import { Tooltip } from '@mui/material';
 
 // Validation Schema
 const registerSchema = z.object({
+  // Same rules as the backend (backend/src/users/credentialRules.ts); the server re-checks them.
   username: z.string()
     .min(3, 'Username must be at least 3 characters.')
-    .max(30, 'Username must be at most 30 characters.')
-    .regex(/^(?!.*\.\.)(?!.*\.$)[a-zA-Z0-9._]{3,30}$/, 'Invalid username format.'),
+    .max(20, 'Username must be at most 20 characters.')
+    .regex(/^[A-Za-z0-9_-]+$/, 'Use only letters, digits, _ or -.'),
   email: z.string()
     .email('Invalid email format.'),
   password: z.string()
-    .min(6, 'Password must be at least 6 characters.'),
+    .min(8, 'Password must be at least 8 characters.')
+    // bcrypt ignores everything after 72 bytes, so the server refuses longer passwords.
+    .refine((p) => new TextEncoder().encode(p).length <= 72, 'Password must be at most 72 bytes.'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match.',

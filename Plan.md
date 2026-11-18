@@ -60,7 +60,7 @@ avatar = first-letter circle with a color hashed from the user id. Slices, each 
    unknown token with 403, `userRepository.updateUsername` / `updatePasswordHash`, and review item #1 fixed (`StarRating` `day` prop).
    Tests: backend 217 passing, frontend 81 passing, both typechecks and frontend lint clean. The ratings "1 SQL statement" test now expects 2
    (auth check + save). Two old `/me` 404 tests were removed (now 403 in `tokenRevocation.test.ts`).
-2. Routes: `PATCH /api/users/me` (username), `PUT /api/users/me/password` (current + new; returns a fresh token; light rate limit).
+2. **DONE (uncommitted):** `PATCH /api/users/me`, `PUT /api/users/me/password` (fresh token, 5 failures/15 min rate limit per user, `SystemDesign.md` #31); registration and the register form now follow the same username/password rules. Backend 256 passing, frontend 81 passing.
 3. Frontend: `/profile/settings` (username + password forms), `UserBadge` becomes a disclosure dropdown (full username, Settings, Log out;
    "My profile" is added in Step 6 when it has content), letter avatar with hashed color (`lib/avatar.ts`, pure, tested).
 Then `/code-review` and `/security-review`. Where stats live: everyone's stats (most/least rated, lowest rated meal of the week) go on the MAIN

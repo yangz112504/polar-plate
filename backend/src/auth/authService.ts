@@ -25,6 +25,14 @@ export class LoginError extends Error {
   }
 }
 
+/** Thrown by `changePassword` when the request is refused for a reason the user can fix. */
+export class PasswordChangeError extends Error {
+  constructor(message: "Current password is incorrect" | "New password must be different from the current one") {
+    super(message);
+    this.name = "PasswordChangeError";
+  }
+}
+
 /**
  * Builds the auth service: password hashing and JWT handling, kept out of the routes.
  * @param users User repository (injected).
@@ -60,6 +68,30 @@ export function createAuthService(users: UserRepository, secretKey: string) {
       if (!user) throw new LoginError("User does not exist");
       if (!(await bcrypt.compare(input.password, user.password))) throw new LoginError("Invalid credentials");
       return signToken(user);
+    },
+
+    /**
+     * Changes a user's password after checking the current one. Bumping `tokenVersion` (done by the
+     * repository) invalidates every token issued before, so the caller gets a fresh token back.
+     * @param userId Id of the logged-in user.
+     * @param input The current password and the new one (the new one's format is validated by the caller).
+     * @returns A new token for the same user, carrying the bumped version.
+     * @throws PasswordChangeError if the current password is wrong or the new one is the same.
+     * @throws Error if the user no longer exists (only possible if deleted mid-request).
+     */
+    async changePassword(userId: string, input: { currentPassword: string; newPassword: string }): Promise<string> {
+      const user = await users.findUserById(userId);
+      if (!user) throw new Error("User not found");
+      if (!(await bcrypt.compare(input.currentPassword, user.password))) {
+        throw new PasswordChangeError("Current password is incorrect");
+      }
+      if (input.newPassword === input.currentPassword) {
+        throw new PasswordChangeError("New password must be different from the current one");
+      }
+      const hash = await bcrypt.hash(input.newPassword, SALT_ROUNDS);
+      const updated = await users.updatePasswordHash(userId, hash);
+      if (!updated) throw new Error("User not found");
+      return signToken(updated);
     },
 
     /**

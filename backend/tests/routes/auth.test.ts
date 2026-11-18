@@ -65,6 +65,43 @@ describe("POST /api/users (register)", () => {
     expect(res.status).toBe(400);
   });
 
+  // Registration follows the same rules as renaming / changing the password (Step 5).
+  // Login is NOT checked against these rules, so older accounts with weaker credentials still get in.
+  it.each([
+    ["too short (2 chars)", "ab"],
+    ["too long (21 chars)", "a".repeat(21)],
+    ["has a space", "al ice"],
+    ["has a dot", "al.ice"],
+  ])("returns 400 mentioning the username when it is %s", async (_name, username) => {
+    const res = await request(app).post("/api/users").send({ ...alice, username });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/username/i);
+    expect(await users.findUserByUsername(username)).toBeNull();
+  });
+
+  it.each([
+    ["shorter than 8 characters", "short7!"],
+    ["longer than 72 characters (bcrypt would cut it off)", "x".repeat(73)],
+  ])("returns 400 mentioning the password when it is %s", async (_name, password) => {
+    const res = await request(app).post("/api/users").send({ ...alice, password });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/password/i);
+    expect(await users.findUserByUsername("alice")).toBeNull();
+  });
+
+  it("accepts boundary values: a 3-char username with an 8-char password, and a 20-char username with a 72-char password", async () => {
+    expect((await request(app).post("/api/users").send({ username: "abc", email: "a@example.com", password: "12345678" })).status).toBe(201);
+    expect(
+      (await request(app).post("/api/users").send({ username: "b".repeat(20), email: "b@example.com", password: "y".repeat(72) })).status,
+    ).toBe(201);
+  });
+
+  it("still lets an older account with a short password log in", async () => {
+    await users.createUser({ username: "oldtimer", email: "old@example.com", password: await bcrypt.hash("abc", 10) });
+    const res = await request(app).post("/api/sessions").send({ username: "oldtimer", password: "abc" });
+    expect(res.status).toBe(200);
+  });
+
   it("returns 400 'User already exists' for a duplicate username", async () => {
     await registerAlice();
     const res = await request(app).post("/api/users").send({ ...alice, email: "other@example.com" });
