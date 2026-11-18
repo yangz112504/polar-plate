@@ -176,7 +176,7 @@ Newest decisions go at the bottom. Kept untracked on purpose (not committed).
 - **Why the average is computed that way:** all steps of one statement see the same snapshot, so the step that sums cannot see the rating just written. We sum everyone *else's* ratings and add the new score in the final SELECT (average = (others' total + new) / (others' count + 1)).
 - **Details:** the score is validated before touching the DB, so a bad score can't create a meal row. The meal insert uses a no-op `DO UPDATE` because `DO NOTHING` returns no row when the meal exists.
 - **Trade-offs:** (1) harder to read and change; (2) a rating saved by someone else at the same instant may be missing from the returned average, corrected on the next read (harmless at ~120 users); (3) each rating briefly locks its meal row (6 rows/day, irrelevant here).
-- **Tests:** exactly 1 SQL statement per POST (counted through a Drizzle logger); the returned average/count match `getMealStats`; re-rating replaces the user's own score; 10 concurrent calls leave one meal row.
+- **Tests:** exactly 1 SQL statement for the save per POST (counted through a Drizzle logger; since Step 5 the test expects 2 because the auth check adds one, see #29); the returned average/count match `getMealStats`; re-rating replaces the user's own score; 10 concurrent calls leave one meal row.
 - **Kept:** `getMealStats` stays because the GET stats route and the future stats page (Step 7) use it. The older `upsertRating` and `getOrCreateMeal` became unused and were deleted.
 - **Where the time really goes:** locally each round trip crosses the internet to Supabase; deployed in the same region as the database a trip costs a few ms. Optimistic UI was rejected (could show success for a failed save).
 
@@ -192,8 +192,20 @@ Newest decisions go at the bottom. Kept untracked on purpose (not committed).
 - **Built (2026-11-17), then redone to match the canvas:** the real `.dc.html` files were read and copied (brick header with hall tabs shaped like folder tabs, pill meal tabs, title + stars under them, tan "Your rating" panel; from 1024px a left column beside a two-column scrolling menu). the outline quiet period is 1000 ms; `useSchedule` re-asks the server when the tab regains focus so a page left open overnight moves to the new day; the "Welcome, name" greeting was dropped.
 - **Trade-offs:** fixed top and bottom bars use ~560 px of a 667 px-tall small phone, so the menu area is small there (to be checked at 375x667 and tightened if needed).
 
+## 29. Revoking old logins: a `tokenVersion` counter checked on every request (Step 5, chosen A)
+- **Problem:** a JWT is valid until it expires (7 days), so after a password change an old (maybe stolen) token kept working, and the `username` inside it went stale after a rename.
+- **Options:** (A) `users.token_version` column + the auth middleware loads the user and compares; (B) move login to Supabase Auth (big rewrite, migrate 120 users' hashes, vendor lock-in on login); (C) 15-minute access tokens + refresh tokens (most code, still needs a lookup to revoke).
+- **Chosen A** (concept: *token revocation with a version counter*). A password change does `token_version + 1` in SQL; a token whose claim differs from the row is rejected with 403. A deleted user's token, or an old Mongo-id token, is rejected the same way.
+- **Details:** tokens issued before this change have no claim and count as version 0, so nobody was logged out on deploy. A rename does not revoke tokens. `req.user.username` now comes from the DB, so it is never stale (the claim inside the JWT can still be old; nothing server-side reads it).
+- **Trade-off (cost):** one extra primary-key lookup per authenticated request. A rating save is now 2 statements (auth check + the single save statement), and its test says so. At larger scale this version could be cached (Redis is where it would go) or we would switch to C.
+- **Tests:** `tests/routes/tokenRevocation.test.ts` and the new repository tests (`updateUsername`, `updatePasswordHash`).
+
+## 30. Avatars: a letter circle with a color from the user id, no uploads (Step 5, chosen)
+- **Problem:** profiles need a picture, but the owner pays only for backend hosting (GitHub Education pack for the rest).
+- **Options:** (1) uploads to Supabase Storage via Express (cost, file validation, security review, moderation); (2) generated identicon patterns; (3) first letter of the username in a circle, color picked from the user id (chosen).
+- **Why 3:** free, nothing stored, nothing to attack, already what `UserBadge` shows. The color comes from a small fixed palette in the brick/cream theme, chosen by hashing the user id, so two "A" users look different (matters for comments in Step 9; the API must return the author's id there). Bio was dropped for the same reason: nobody needs it.
+- **Where stats live:** everyone's stats (most rated, least rated, lowest rated meal of the week) go on the main dashboard (Step 7); personal stats and history go in the profile (Steps 6 and 8).
+
 ## Planned / open
-- Auth gaps (stale username in JWT, password change doesn't revoke tokens): Step 5 (`tokenVersion` or Supabase Auth).
 - Favorites: `ratings.is_favorite` vs a `favorites` table, decided in Step 6.
-- Avatars in object storage (Supabase Storage), never in the DB.
 - Comments: validate with zod, rate limit, never `dangerouslySetInnerHTML`.

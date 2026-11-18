@@ -37,7 +37,9 @@ afterEach(() => {
 });
 
 const setup = () => userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
-const renderIt = () => render(<StarRating activeTab="Thorne" meal="Lunch" onSubmitSuccess={() => {}} />);
+const DAY = "2026-11-17";
+const ui = (day: string) => <StarRating activeTab="Thorne" meal="Lunch" day={day} onSubmitSuccess={() => {}} />;
+const renderIt = () => render(ui(DAY));
 
 describe("StarRating", () => {
   it("shows the hint about single and double clicks", () => {
@@ -104,6 +106,18 @@ describe("StarRating", () => {
     expect(screen.getAllByTestId("star-full")).toHaveLength(2);
     expect(screen.getAllByTestId("star-half")).toHaveLength(1);
     expect(screen.getAllByTestId("star-empty")).toHaveLength(2);
+  });
+
+  // Review item #1: the server day rolls over while the page stays open, same hall and meal name.
+  it("reloads the saved score when only the day changes (no stale score from yesterday)", async () => {
+    mockFetch(4);
+    const { rerender } = renderIt();
+    expect(await screen.findByText("4 / 5")).toBeInTheDocument();
+
+    const fn = mockFetch(null); // today's meal has no rating yet
+    rerender(ui("2026-11-18"));
+    expect(await screen.findByText("0 / 5")).toBeInTheDocument();
+    expect(fn.mock.calls.some(([url]) => String(url).includes("/api/ratings/user"))).toBe(true);
   });
 
   it("one click on the saved star keeps it whole (saved 4, click 4 -> 4)", async () => {

@@ -33,7 +33,7 @@ export function createApp(deps: AppDeps): Express {
   const meals = createMealRepository(deps.db);
   const ratings = createRatingRepository(deps.db);
   const auth = createAuthService(users, deps.secretKey);
-  const requireAuth = createRequireAuth(auth);
+  const requireAuth = createRequireAuth(auth, users);
   const now = deps.now ?? (() => new Date());
 
   const app = express();

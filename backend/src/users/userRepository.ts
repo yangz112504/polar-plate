@@ -1,8 +1,16 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { users } from "../db/schema";
 
-export type User = { id: string; username: string; email: string; password: string; createdAt: Date };
+export type User = {
+  id: string;
+  username: string;
+  email: string;
+  password: string;
+  /** Bumped when the password changes; tokens carrying an older value are rejected. */
+  tokenVersion: number;
+  createdAt: Date;
+};
 /** `password` is the bcrypt hash, never plaintext. */
 export type NewUser = { username: string; email: string; password: string };
 
@@ -61,6 +69,39 @@ export function createUserRepository(db: Db) {
     findUserByUsername: (username: string) => findOne(eq(users.username, username)),
     /** @returns The user with this email (matched case-insensitively), or null. */
     findUserByEmail: (email: string) => findOne(eq(users.email, email.toLowerCase())),
+
+    /**
+     * Renames a user. Does not revoke their tokens (the username is not what a token's validity rests on).
+     * @param id The user's id.
+     * @param username The new username (validated by the caller).
+     * @returns The updated user, or null if no such user.
+     * @throws UserAlreadyExistsError if another user already has this username.
+     */
+    async updateUsername(id: string, username: string): Promise<User | null> {
+      try {
+        const [row] = await db.update(users).set({ username }).where(eq(users.id, id)).returning();
+        return row ?? null;
+      } catch (error) {
+        if (isUniqueViolation(error)) throw new UserAlreadyExistsError();
+        throw error;
+      }
+    },
+
+    /**
+     * Stores a new password hash and bumps `tokenVersion`, which invalidates every token issued before.
+     * The bump is done in SQL (`token_version + 1`) so two simultaneous changes cannot lose an increment.
+     * @param id The user's id.
+     * @param passwordHash A bcrypt hash, never plaintext.
+     * @returns The updated user, or null if no such user.
+     */
+    async updatePasswordHash(id: string, passwordHash: string): Promise<User | null> {
+      const [row] = await db
+        .update(users)
+        .set({ password: passwordHash, tokenVersion: sql`${users.tokenVersion} + 1` })
+        .where(eq(users.id, id))
+        .returning();
+      return row ?? null;
+    },
   };
 }
 export type UserRepository = ReturnType<typeof createUserRepository>;

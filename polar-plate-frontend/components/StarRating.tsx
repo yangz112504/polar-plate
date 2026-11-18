@@ -9,6 +9,12 @@ interface StarRatingProps {
   activeTab: string;
   /** Meal name, e.g. "Lunch". */
   meal: string;
+  /**
+   * The server's current service day (YYYY-MM-DD). Not sent anywhere: it only makes the saved score reload
+   * when the day rolls over while the hall and meal name stay the same (otherwise yesterday's score would
+   * stay on screen and could overwrite today's rating).
+   */
+  day?: string;
   /** Called after a rating is saved so the parent can refresh averages. */
   onSubmitSuccess?: () => void;
 }
@@ -18,7 +24,7 @@ interface StarRatingProps {
  * quickly (see DOUBLE_CLICK_MS) for a half star. Loads the user's saved rating, and sends the
  * chosen score only when "Submit Rating" is pressed.
  */
-function StarRating({ activeTab, meal, onSubmitSuccess }: StarRatingProps) {
+function StarRating({ activeTab, meal, day, onSubmitSuccess }: StarRatingProps) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
   // Remembers the last press for double-click timing; not set by a rating loaded from the server.
@@ -52,7 +58,7 @@ function StarRating({ activeTab, meal, onSubmitSuccess }: StarRatingProps) {
     return () => {
       cancelled = true;
     };
-  }, [meal, activeTab, frontEndUrl]);
+  }, [meal, activeTab, day, frontEndUrl]);
 
   /** Applies the single/double-click rule for a press on `star`. */
   const handlePress = (star: number) => {

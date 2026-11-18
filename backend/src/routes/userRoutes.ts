@@ -60,8 +60,8 @@ export function createUserRoutes(deps: { auth: AuthService; users: UserRepositor
   // Current user (never includes the password hash).
   router.get("/api/users/me", deps.requireAuth, async (req, res) => {
     const { userId } = (req as AuthedRequest).user;
-    // Old tokens hold Mongo ObjectIds; querying a uuid column with one would crash, so treat as "not found".
-    const user = z.uuid().safeParse(userId).success ? await deps.users.findUserById(userId) : null;
+    // requireAuth already checked the user exists; this only covers a delete between the two lookups.
+    const user = await deps.users.findUserById(userId);
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;

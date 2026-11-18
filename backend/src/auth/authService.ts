@@ -8,7 +8,12 @@ const SALT_ROUNDS = 10;
 const TOKEN_LIFETIME = "7d";
 
 /** What we put inside the JWT. */
-export type TokenPayload = { userId: string; username: string };
+export type TokenPayload = {
+  userId: string;
+  username: string;
+  /** Must equal the user's `tokenVersion` in the DB. Absent on tokens issued before it existed (treated as 0). */
+  tokenVersion?: number;
+};
 
 /** Thrown by `login` when the username/email is unknown or the password is wrong. */
 export class LoginError extends Error {
@@ -27,8 +32,8 @@ export class LoginError extends Error {
  */
 export function createAuthService(users: UserRepository, secretKey: string) {
   /** Signs a 7-day token for a user. */
-  function signToken(user: { id: string; username: string }): string {
-    const payload: TokenPayload = { userId: user.id, username: user.username };
+  function signToken(user: { id: string; username: string; tokenVersion: number }): string {
+    const payload: TokenPayload = { userId: user.id, username: user.username, tokenVersion: user.tokenVersion };
     return jwt.sign(payload, secretKey, { expiresIn: TOKEN_LIFETIME });
   }
 

@@ -101,17 +101,19 @@ describe("POST /api/ratings", () => {
   });
 
   // Latency: every statement is a network round trip to the database, so a rating save must stay cheap.
-  it("saves a rating with exactly 1 SQL statement (one round trip)", async () => {
+  // Budget: 1 statement for requireAuth's token check (tokenVersion, Step 5) + 1 for the save itself.
+  it("saves a rating with exactly 2 SQL statements (auth check + one save round trip)", async () => {
     const statements: string[] = [];
     const client = postgres(TEST_DATABASE_URL);
     const countingDb = drizzle(client, { schema, logger: { logQuery: (q) => void statements.push(q) } });
     try {
       const countingApp = createApp({ db: countingDb, secretKey: SECRET, now: () => NOW });
       await rate(aliceToken, { ...meal, rating: 4 }, countingApp); // first rating of the day: creates the meal
-      expect(statements.length).toBe(1);
+      expect(statements.length).toBe(2);
+      expect(statements[0]).toMatch(/from "users"/i); // the auth lookup comes first
       statements.length = 0;
       await rate(aliceToken, { ...meal, rating: 3.5 }, countingApp); // meal exists, rating updated
-      expect(statements.length).toBe(1);
+      expect(statements.length).toBe(2);
     } finally {
       await client.end();
     }

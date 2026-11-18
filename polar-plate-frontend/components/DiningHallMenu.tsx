@@ -212,7 +212,7 @@ function DiningHallMenu({ headerRight }: DiningHallMenuProps) {
         {/* Fixed: your rating */}
         <footer className="bg-panel px-5 pb-[18px] pt-3.5 shadow-[0_-6px_12px_-8px_rgba(35,31,32,0.35)]
                            lg:col-start-1 lg:row-start-3 lg:mb-6 lg:rounded-2xl lg:p-4 lg:shadow-none">
-          <StarRating activeTab={hall} meal={meal} onSubmitSuccess={handleSubmitSuccess} />
+          <StarRating activeTab={hall} meal={meal} day={day} onSubmitSuccess={handleSubmitSuccess} />
         </footer>
       </div>
     </div>

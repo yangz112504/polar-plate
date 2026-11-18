@@ -54,11 +54,17 @@ when the server day rolls over while the page stays open and the meal name is un
 rating with yesterday's). #7 (nested scroll on short landscape phones) accepted. Frontend: 80 tests passing, typecheck and
 lint clean. **Not re-run since the TypeScript conversion: `npm run build`** (the dev server was up); run it once before a PR.
 
-**Next action: Step 5 (profile basics), not started.** Per `CLAUDE.md`: start in plan mode, present 2-3 designs with pros,
-cons and trade-offs, owner decides, tests first. Scope from the roadmap: username change, password change (current + new +
-confirm), bio, avatar upload (Supabase Storage), and the auth fixes in "System design review" #7 (JWT holds a stale
-`username` after a rename; a password change does not log out old tokens: `tokenVersion` vs Supabase Auth). See also the
-"Step 5 note: profile dropdown on the header circle" below. Good moment to also fix open review item #1 (above).
+**Step 5 (profile basics): IN PROGRESS. Scope agreed 2026-11-17 (`SystemDesign.md` #29, #30).** NO bio, NO avatar upload (cost);
+avatar = first-letter circle with a color hashed from the user id. Slices, each tests first:
+1. **DONE (uncommitted):** `users.token_version` (migration `0002_new_moon_knight`), `requireAuth` loads the user and rejects a stale or
+   unknown token with 403, `userRepository.updateUsername` / `updatePasswordHash`, and review item #1 fixed (`StarRating` `day` prop).
+   Tests: backend 217 passing, frontend 81 passing, both typechecks and frontend lint clean. The ratings "1 SQL statement" test now expects 2
+   (auth check + save). Two old `/me` 404 tests were removed (now 403 in `tokenRevocation.test.ts`).
+2. Routes: `PATCH /api/users/me` (username), `PUT /api/users/me/password` (current + new; returns a fresh token; light rate limit).
+3. Frontend: `/profile/settings` (username + password forms), `UserBadge` becomes a disclosure dropdown (full username, Settings, Log out;
+   "My profile" is added in Step 6 when it has content), letter avatar with hashed color (`lib/avatar.ts`, pure, tested).
+Then `/code-review` and `/security-review`. Where stats live: everyone's stats (most/least rated, lowest rated meal of the week) go on the MAIN
+dashboard in Step 7; personal stats and history go in the profile (Steps 6 and 8).
 Comments (Step 9) are NOT part of Step 4. Unrelated leftover (DON'T FIX here): backend unused deps (and `clsx` / `tailwind-merge` in the frontend now that `lib/utils.js` is gone).
 
 ---
@@ -137,9 +143,9 @@ Defaults chosen but **not yet confirmed** with the owner (confirm when Step 0 st
 | 2 | ✅ **Meal tabs + default tab by time**; weekend Brunch/Dinner; ratings use the server day + upsert | First thing that uses stored menus; correct rating data |
 | 3 | ✅ **Half-star ratings** (0.5–5.0, step 0.5; validated by the server and the DB) | Finishes the core rating experience |
 | 4 | ✅ **Design system + dashboard redesign, mobile-first** (design for a 375px phone first, then widen; Bowdoin tokens, typography, buttons; use the `frontend-design` plugin) | Comes before new pages, so they're built in the new style |
-| 5 | **Profile basics**: username, password change, bio, avatar; auth fixes (#7) | Gives history, favorites and friends a home |
+| 5 | **Profile basics**: username, password change, letter avatar, dropdown; auth fixes (#7) (no bio, no uploads) | Gives history, favorites and friends a home |
 | 6 | **Rating history → favorites → pin to profile** | Ratings ⋈ meals; first "my data" view |
-| 7 | **Stats page**: today's B/L/D side by side; best and worst meals of the week | Aggregations that grow out of history |
+| 7 | **Stats on the main dashboard** (everyone's): today's B/L/D side by side; most rated, least rated, lowest rated meal of the week | Aggregations that grow out of history |
 | 8 | **Streaks** | Distinct rating days per user via `dayKey` |
 | 9 | **Comments per meal**: each comment shows the user, their profile picture (avatar, from Step 5), the text and when it was posted | Attach to the meal identity; moderation and rate limits. Needs Step 5's avatars first; Step 4 only keeps room for it in the layout |
 | 10 | **Friends** (requests, privacy) | Most complex; builds on everything above |

@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
-  check, date, jsonb, numeric, pgTable, text, timestamp, unique, uuid,
+  check, date, integer, jsonb, numeric, pgTable, text, timestamp, unique, uuid,
 } from "drizzle-orm/pg-core";
 
 /** One row = one account. */
@@ -10,6 +10,8 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   // Holds a bcrypt hash, never plaintext (the column is named "password" by choice).
   password: text("password").notNull(),
+  // Bumped on every password change; a JWT is only valid while its claim matches this value.
+  tokenVersion: integer("token_version").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }).enableRLS(); // RLS on + no policies = Supabase's public REST API can't read this table.
 

@@ -152,18 +152,8 @@ describe("GET /api/users/me", () => {
     expect(JSON.stringify(res.body)).not.toContain("password");
   });
 
-  it("returns 404 when the token's user no longer exists", async () => {
-    const token = await registerAlice();
-    await resetDb(db);
-    const res = await request(app).get("/api/users/me").set("Authorization", `Bearer ${token}`);
-    expect(res.status).toBe(404);
-  });
-
-  it("returns 404, not 500, for an old token whose userId is a Mongo ObjectId", async () => {
-    const oldToken = jwt.sign({ userId: "68aa57aaede85b5ba76e4936", username: "x" }, SECRET);
-    const res = await request(app).get("/api/users/me").set("Authorization", `Bearer ${oldToken}`);
-    expect(res.status).toBe(404);
-  });
+  // A deleted user's token and a legacy Mongo-id token are now rejected earlier (403) by requireAuth;
+  // see tests/routes/tokenRevocation.test.ts.
 });
 
 describe("DELETE /api/sessions (logout)", () => {
